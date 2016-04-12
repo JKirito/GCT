@@ -32,7 +32,12 @@ public class InstrumentedMethod
 		{
 			values[i] = 0;
 		}
-		methodCall.invoke(clazz, values);
+		try
+		{
+			methodCall.invoke(clazz, values);
+		} catch (Exception e)
+		{
+		}
 		addValuesToReturnList(values);
 
 		Field conditionsField = clazz.getClass().getDeclaredField(_conditionsFieldName);

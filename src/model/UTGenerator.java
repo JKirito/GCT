@@ -22,16 +22,19 @@ public class UTGenerator
 	private Set<MethodToSelect>	_methods;
 	private final String		compiledClassFolder	= "bin";
 	private final String		packetNameOutput	= "tmp";
+	private String				_packetClass;
+	private TestClass			_testClass;
 
 	public UTGenerator(SpoonedClass spoonedClass, Set<MethodToSelect> methods)
 	{
 		this._spoonedClass = spoonedClass;
+		this._packetClass = this._spoonedClass.getSpoonedClass().getPackage().getSimpleName();
 		this._methods = methods;
 	}
 
 	public String generarCasos()
 	{
-		TestClass testClass = new TestClass(_spoonedClass.getSpoonedClass().getSimpleName());
+		_testClass = new TestClass(_spoonedClass.getSpoonedClass().getSimpleName(), this._packetClass);
 		// System.out.println(_spoonedClass.getSpoonedClass().toString());
 		CtClass<?> ctClass = _spoonedClass.getSpoonedClass();
 		Factory factory = _spoonedClass.getFactory();
@@ -68,8 +71,8 @@ public class UTGenerator
 		Class<?> classInstrumented = null;
 		try
 		{
-			System.out.println("clase a compilar!!!!!!");
-			System.out.println("package " + packetNameOutput + ";\n" + ctClass.toString());
+			// System.out.println("package " + packetNameOutput + ";\n" +
+			// ctClass.toString());
 			// TODO tmp... antes de compilar borro .class si está generado
 			String qualifiedClassName = packetNameOutput + "." + ctClass.getSimpleName();
 
@@ -114,12 +117,17 @@ public class UTGenerator
 			// XXXXXX: creo los casos de test para los inputs generados
 			for (List<Integer> inputs : inputsGenerated)
 			{
-				testClass.addMethodTest(M.getCtMethod().getSimpleName(), inputs);
+				_testClass.addMethodTest(M.getCtMethod().getSimpleName(), inputs);
 			}
 		}
 		// XXXXXX: Devuelvo el String con la clase que contiene los casos de
 		// test
-		return testClass.getGenerateTestClass();
+		return _testClass.getGenerateTestClass();
+	}
+
+	public Integer getGeneratedMethodsCount()
+	{
+		return this._testClass.getGeneratedMethodsCount();
 	}
 
 	private void storeClass(CtClass<?> ctClas) throws IOException

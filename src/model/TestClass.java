@@ -1,46 +1,51 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TestClass
 {
 	/**
 	 * String de la Clase Test a generar
 	 */
-	private StringBuilder		_stringClassTest;
+	private StringBuilder			_stringClassTest;
 
 	/**
 	 * métodos de la Clase Test a generar
 	 */
-	private List<StringBuilder>	_methods;
+	private List<StringBuilder>		_methods;
 
 	/**
 	 * Nombre de la clase a generar
 	 */
-	private String				_className;
+	private String					_className;
 
 	/**
 	 * Número de método
 	 */
-	private int					_methodNum;
+	private Map<String, Integer>	_methodNum;
 
-	public TestClass(String classToTest)
+	private String					_packetClass;
+
+	public TestClass(String classToTest, String packetClass)
 	{
 		this._stringClassTest = new StringBuilder();
 		this._methods = new ArrayList<>();
 		this._className = classToTest;
+		this._packetClass = packetClass;
+		this._methodNum = new HashMap<>();
 	}
 
 	public String getGenerateTestClass()
 	{
-		this._stringClassTest.append("//Agregar paquete de clase\n");
+		this._stringClassTest.append("package " + this._packetClass + ";\n");
 		this._stringClassTest.append("import org.junit.Test;\n");
 		this._stringClassTest.append("import static org.junit.Assert.assertEquals;\n");
-		this._stringClassTest.append("//Importar " + this._className);
 		this._stringClassTest.append("\n\n");
 
-		this._stringClassTest.append("public class Z3SolverTest\n {\n");
+		this._stringClassTest.append("public class " + this._className + "Test" + "\n {\n");
 
 		for (StringBuilder method : this._methods)
 		{
@@ -54,9 +59,10 @@ public class TestClass
 
 	public void addMethodTest(String methodName, List<Integer> parameters)
 	{
+		addCounterMethod(methodName);
 		StringBuilder method = new StringBuilder();
-		method.append("\t@test\n");
-		method.append("\tpublic void " + methodName + this._methodNum + "()\n\t{\n");
+		method.append("\t@Test\n");
+		method.append("\tpublic void " + methodName + "_" + this._methodNum.get(methodName) + "()\n\t{\n");
 		String varName = "var";
 		method.append("\t\t" + this._className + " " + varName + " = new " + this._className + "();\n");
 		String params = "";
@@ -70,7 +76,22 @@ public class TestClass
 		// method.append("assertEquals(" + + ", " + + ")")
 		method.append("\t}");
 		this._methods.add(method);
-		this._methodNum++;
+	}
+
+	private void addCounterMethod(String methodName)
+	{
+		Integer n = this._methodNum.get(methodName) == null ? 0 : (this._methodNum.get(methodName) + 1);
+		this._methodNum.put(methodName, n);
+	}
+
+	public Integer getGeneratedMethodsCount()
+	{
+		Integer n = 0;
+		for (String method : this._methodNum.keySet())
+		{
+			n += this._methodNum.get(method);
+		}
+		return n;
 	}
 
 }

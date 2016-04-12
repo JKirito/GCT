@@ -11,28 +11,17 @@ public class SpoonedClass
 {
 	private Launcher	_spoon;
 	private CtClass<?>	_ctClass;
-	private String		pathJavaFile;
-	// private String classQualifiedNameToInstrument;
-	// private String methodNameToInstrument;
-	//
-	// public SpoonedClass(String pathFile, String
-	// classQualifiedNameToInstrument, String methodNameToInstrument)
-	// {
-	// _spoon = new Launcher();
-	// this.pathJavaFile = pathFile;
-	// this.classQualifiedNameToInstrument = classQualifiedNameToInstrument;
-	// this.methodNameToInstrument = methodNameToInstrument;
-	// }
+	private String		_pathJavaFile;
 
 	public SpoonedClass(String pathFile)
 	{
-		_spoon = new Launcher();
-		this.pathJavaFile = pathFile;
+		this._spoon = new Launcher();
+		this._pathJavaFile = pathFile;
 	}
 
 	public void loadClass() throws Exception
 	{
-		_spoon.addInputResource(pathJavaFile);
+		_spoon.addInputResource(_pathJavaFile);
 		try
 		{
 			_spoon.run();
@@ -83,6 +72,11 @@ public class SpoonedClass
 	public Set<CtMethod<?>> getAllMethods()
 	{
 		return _ctClass.getAllMethods();
+	}
+
+	public String getSpoonedClassName()
+	{
+		return this._ctClass.getSimpleName();
 	}
 
 }

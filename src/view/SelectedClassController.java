@@ -10,8 +10,6 @@ import java.util.Set;
 import controller.MainApp;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
@@ -99,33 +97,15 @@ public class SelectedClassController
 			spoonedClass.loadClass();
 		} catch (Exception e)
 		{
-			alertErrorAlcargarClase(e.getMessage());
+			ViewUtils.alertException("Se ha producido un error al cargar la clase " + this._filePathJava, e);
+			this._paneLoadClass.setDisable(true);
 			return;
 		}
 		this.clearListAndCompleteMethods(spoonedClass.getAllMethods());
 	}
 
-	public void alertErrorAlcargarClase(String msjError)
-	{
-		Alert alert = new Alert(AlertType.ERROR);
-		alert.setTitle("Error!");
-		alert.setHeaderText("Se ha producido un error al cargar la clase " + this._filePathJava);
-		alert.setContentText("Msj:\n" + msjError);
-
-		alert.showAndWait();
-	}
-
 	public void generarCasosDeTest()
 	{
-		// spoonedClass = new SpoonedClass(_filePathJava);
-		// try
-		// {
-		// spoonedClass.loadClass();
-		// } catch (Exception e)
-		// {
-		// alertErrorAlcargarClase(e.getMessage());
-		// return;
-		// }
 		Set<MethodToSelect> selectedMethods = new HashSet<>();
 		for (MethodToSelect selectedMethod : this._chkListMethods.getItems())
 		{
@@ -134,28 +114,28 @@ public class SelectedClassController
 		}
 		if (selectedMethods.isEmpty())
 		{
-			System.out.println("No hay métodos seleccionados!!!!!");
-			_btnGenerarTest.setText("Generar casos de test!");
+			ViewUtils.alertWarning("Operación no permitida", "Debe seleccionar al menos un método!");
 			return;
 		}
 		UTGenerator generator = new UTGenerator(spoonedClass, selectedMethods);
 		String testClass = generator.generarCasos();
 
-		FileChooser fileChooser = new FileChooser();
-		fileChooser.setTitle("Selecciona una ubicación para guardar la clase con los casos de Tests");
-		fileChooser.getExtensionFilters().add(javaFilter);
-		File fileToSave = fileChooser.showSaveDialog(_mainApp.getPrimaryStage());
-		if (fileToSave == null)
-			return;
-		StoreFile sf = new StoreFile(fileToSave.getAbsolutePath(), javaExtension, testClass, fileToSave.getName(),
+		String classToTestName = spoonedClass.getSpoonedClassName();
+		String pathToSave = this._filePathJava.replace(classToTestName + javaExtension, "");
+		StoreFile sf = new StoreFile(pathToSave, javaExtension, testClass, classToTestName + "Test",
 				StoreFile.CHARSET_UTF8);
 		try
 		{
 			sf.store();
+			ViewUtils.alertInformation("Se ha almacenado la clase " + classToTestName + "Test",
+					"Se han generado correctamente " + generator.getGeneratedMethodsCount()
+							+ " métodos y fueron almacenados en el directorio " + pathToSave);
 		} catch (IOException e)
 		{
-			// TODO Auto-generated catch block
+			ViewUtils.alertException("Error al guardar la clase con los casos de test (" + classToTestName + "Test)",
+					e);
 			e.printStackTrace();
+			this._paneLoadClass.setDisable(true);
 			return;
 		}
 		this._paneLoadClass.setDisable(true);

@@ -19,6 +19,8 @@
                   <Button fx:id="_btnGenerarTest" layoutX="419.0" layoutY="147.0" mnemonicParsing="false" onAction="#generarCasosDeTest" prefHeight="124.0" prefWidth="219.0" text="Generar Casos de Test!" />
                   <Label layoutX="16.0" layoutY="58.0" text="Seleccione los metodos para los que desee generar tests" />
                   <ListView fx:id="_chkListMethods" layoutX="25.0" layoutY="87.0" prefHeight="245.0" prefWidth="372.0" />
+                  <TextField fx:id="_txtCiclo" layoutX="177.0" layoutY="13.0" prefHeight="25.0" prefWidth="40.0" />
+                  <Label layoutX="25.0" layoutY="19.0" text="&quot;Profundidad&quot; ciclos :" />
                </children>
             </Pane>
          </children>

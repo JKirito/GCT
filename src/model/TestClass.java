@@ -80,7 +80,7 @@ public class TestClass
 
 	private void addCounterMethod(String methodName)
 	{
-		Integer n = this._methodNum.get(methodName) == null ? 0 : (this._methodNum.get(methodName) + 1);
+		Integer n = this._methodNum.get(methodName) == null ? 1 : (this._methodNum.get(methodName) + 1);
 		this._methodNum.put(methodName, n);
 	}
 

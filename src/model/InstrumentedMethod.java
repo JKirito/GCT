@@ -43,7 +43,7 @@ public class InstrumentedMethod
 		Field conditionsField = clazz.getClass().getDeclaredField(_conditionsFieldName);
 		@SuppressWarnings("unchecked")
 		Collection<SymbCondition> conditionsSymb = (Collection<SymbCondition>) conditionsField.get(clazz);
-		// System.out.println("Condiciones: " + conditionsSymb);
+		System.out.println("Condiciones: " + conditionsSymb);
 
 		Field symbParamField = clazz.getClass().getDeclaredField(_symbParamFieldName);
 		@SuppressWarnings("unchecked")
@@ -59,14 +59,13 @@ public class InstrumentedMethod
 			// negarYMarcarUltimaCondicion(conditionsSymb);
 			// }
 			Z3Solver z3 = new Z3Solver();
-			// System.out.println("Condiciones a satisfacer: " +
-			// conditionsSymb);
+			System.out.println("Condiciones a satisfacer: " + conditionsSymb);
 			Map<String, Integer> mapValues = z3.getSatisfiableValues(conditionsSymb);
 
 			// si z3 encontro valores, corro con esos valores
 			if (!mapValues.isEmpty())
 			{
-				// System.out.println("mapValues: " + mapValues.toString());
+				System.out.println("mapValues: " + mapValues.toString());
 				Object[] intParams = new Object[symbParams.size()];
 				int i = 0;
 				for (String param : symbParams)

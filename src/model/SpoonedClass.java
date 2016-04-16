@@ -52,6 +52,7 @@ public class SpoonedClass
 	// return _ctClass.getMethodsByName(methodNameToInstrument).get(0);
 	// }
 
+	// TODO: modificar! puede haber sobrecarga!
 	public CtMethod<?> getSpoonedMethod(String method)
 	{
 		if (method.isEmpty() || method == null)
@@ -77,6 +78,11 @@ public class SpoonedClass
 	public String getSpoonedClassName()
 	{
 		return this._ctClass.getSimpleName();
+	}
+
+	public String getPathJavaFile()
+	{
+		return _pathJavaFile;
 	}
 
 }

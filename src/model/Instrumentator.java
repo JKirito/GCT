@@ -1,14 +1,18 @@
 package model;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.singularsys.jep.ParseException;
 
 import spoon.reflect.code.CtAssignment;
+import spoon.reflect.code.CtCodeSnippetExpression;
 import spoon.reflect.code.CtCodeSnippetStatement;
 import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtIf;
+import spoon.reflect.code.CtStatement;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtField;
 import spoon.reflect.declaration.CtMethod;
@@ -16,11 +20,13 @@ import spoon.reflect.declaration.CtParameter;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.ModifierKind;
 import spoon.reflect.factory.Factory;
+import spoon.reflect.reference.CtLocalVariableReference;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
 import spoon.support.reflect.code.CtLocalVariableImpl;
 import spoon.support.reflect.code.CtOperatorAssignmentImpl;
 import spoon.support.reflect.code.CtUnaryOperatorImpl;
+import spoon.support.reflect.code.CtWhileImpl;
 
 public class Instrumentator
 {
@@ -35,19 +41,30 @@ public class Instrumentator
 	private CtMethod<?>		_method;
 	private Factory			_factory;
 
+	private final String	_renameStringVar						= "_xeditx_";
+
 	public Instrumentator(CtMethod<?> method, Factory factory)
 	{
 		this._method = method;
 		this._factory = factory;
 	}
 
-	public void process() throws ParseException
+	/**
+	 * Instrumenta el método recibido por parámetro. También agrega atributos a
+	 * la clase del método
+	 * 
+	 * @param k
+	 *            cantidad de veces que ejecuto un ciclo
+	 * @throws ParseException
+	 */
+	public void process(int k) throws ParseException
 	{
 		this.initialize();
-		// this.showStatements();
 		// this.preProcess();
+		this.preProcessLoop(k);
 		this.processAsigments();
 		this.processConditionalStatements();
+
 	}
 
 	// TODO: preprocesar statements como a++(CtUnaryOperatorImpl),
@@ -124,6 +141,119 @@ public class Instrumentator
 		}
 
 		return change;
+	}
+
+	// TODO: add CtForImpl, CtForEachImpl, CtDoImpl,
+	public boolean preProcessLoop(int k)
+	{
+		boolean whileChanged = preProcessWhile(k);
+		return whileChanged;
+	}
+
+	/**
+	 * cambiar While por "k" ifs anidados
+	 * 
+	 * @param k
+	 */
+	private boolean preProcessWhile(int k)
+	{
+		TypeFilter<CtWhileImpl> filterWhile = new TypeFilter<CtWhileImpl>(CtWhileImpl.class);
+		List<CtWhileImpl> whiles = _method.getElements(filterWhile);
+
+		boolean change = !whiles.isEmpty();
+		Map<String, Integer> localVarsRenamed = new HashMap<>();
+		boolean changeLocalVarName = false;
+		// TODO esto habria que cambiarlo para hacer un tratamiento de whiles
+		// anidados
+		int i = 0;
+		// for (int i = whiles.size() - 1; i >= 0; i--)
+		// {
+		Map<String, Integer> oldLocalVarsRenamed = new HashMap<>(localVarsRenamed);
+		localVarsRenamed.clear();
+		for (String varName : oldLocalVarsRenamed.keySet())
+		{
+			int numberLocalVar = oldLocalVarsRenamed.get(varName);
+			System.out.println("varNAme: " + varName);
+			localVarsRenamed.put(varName + _renameStringVar + numberLocalVar, numberLocalVar + 1);
+		}
+		CtWhileImpl concreteWhile = whiles.get(i);
+		// }
+		// for (CtWhileImpl concreteWhile : whiles)
+		// {
+		TypeFilter<CtLocalVariableReference<?>> filterLocalVar = new TypeFilter<CtLocalVariableReference<?>>(
+				CtLocalVariableReference.class);
+		List<CtLocalVariableReference<?>> localVars = concreteWhile.getElements(filterLocalVar);
+
+		for (CtLocalVariableReference<?> ctLocalVariableRef : localVars)
+		{
+			String varName = ctLocalVariableRef.getSimpleName();
+			System.out.println("La varaible local es: " + varName);
+			Integer renameNumVar = null;
+			if (localVarsRenamed.get(varName) == null)
+				localVarsRenamed.put(varName, 1);
+
+			renameNumVar = localVarsRenamed.get(varName);
+			String newVarName = "";
+
+			if (changeLocalVarName)
+				newVarName = varName.substring(0, varName.length() - 1) + renameNumVar;
+			else
+				newVarName = varName + _renameStringVar + renameNumVar;
+
+			ctLocalVariableRef.getDeclaration().setSimpleName(newVarName);
+			ctLocalVariableRef.setSimpleName(newVarName);
+		}
+		changeLocalVarName = true;
+		CtExpression<Boolean> loopExpression = concreteWhile.getLoopingExpression();
+		CtStatement whileBody = concreteWhile.getBody();
+
+		CtIf ifStatment = _factory.Core().createIf();
+		ifStatment.setCondition(loopExpression);
+		ifStatment.setThenStatement(whileBody);
+
+		// k-1 porque ya agregue un if
+		joinNestedIfs(ifStatment, k - 1);
+		// joinNestedIfs(ifStatment, localVarsRenamed, k - 1);
+
+		concreteWhile.replace(ifStatment);
+		// change = true;
+		// }
+		System.out.println("**method**");
+		System.out.println(_method.toString());
+		System.out.println("******************************");
+		return change;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void joinNestedIfs(CtIf ifStatment, int k)
+	{
+		if (k == 0)
+			return;
+
+		String ifCondition = ifStatment.getCondition().toString();
+		// for(String var : localVarsRenamed.keySet())
+		// {
+		// ifCondition = ifCondition.replace(oldChar, newChar)
+		// }
+		CtCodeSnippetExpression<Boolean> snippetIfCondition = _factory.Code().createCodeSnippetExpression(ifCondition);
+
+		// Si hay declaraciones locales, tengo que cambiarles el nombre a las
+		// variables
+		// TypeFilter<CtLocalVariableImpl<?>> filterLocalVar = new
+		// TypeFilter<CtLocalVariableImpl<?>>(
+		// CtLocalVariableImpl.class);
+		// System.out.println("local var: " +
+		// ifStatment.getThenStatement().getElements(filterLocalVar).toString());
+
+		CtCodeSnippetStatement snippetThenBody = _factory.Code()
+				.createCodeSnippetStatement(ifStatment.getThenStatement().toString());
+
+		CtIf ifStatmentNested = _factory.Core().createIf();
+		ifStatmentNested.setCondition(snippetIfCondition);
+		ifStatmentNested.setThenStatement(snippetThenBody);
+
+		ifStatment.getThenStatement().insertAfter(ifStatmentNested);
+		joinNestedIfs(ifStatmentNested, k - 1);
 	}
 
 	/**
@@ -319,17 +449,16 @@ public class Instrumentator
 		return "String " + varNameToAssign + " = " + getStringCallMethodGetSymbolicExpression(assignment, mapName);
 	}
 
-	// private void showStatements(CtMethod<?> method)
-	// {
-	// TypeFilter<CtStatement> f = new
-	// TypeFilter<CtStatement>(CtStatement.class);
-	// List<CtStatement> st = method.getElements(f);
-	//
-	// for (CtStatement s : st)
-	// {
-	// System.out.println("S--> " + s.toString() + " : " + s.getClass());
-	//
-	// }
-	// }
+	public void showStatements()
+	{
+		TypeFilter<CtStatement> f = new TypeFilter<CtStatement>(CtStatement.class);
+		List<CtStatement> st = _method.getElements(f);
+
+		for (CtStatement s : st)
+		{
+			System.out.println("S--> " + s.toString() + " : " + s.getClass());
+
+		}
+	}
 
 }

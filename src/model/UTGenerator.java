@@ -32,7 +32,7 @@ public class UTGenerator
 		this._methods = methods;
 	}
 
-	public String generarCasos()
+	public String generarCasos(int k)
 	{
 		_testClass = new TestClass(_spoonedClass.getSpoonedClass().getSimpleName(), this._packetClass);
 		// System.out.println(_spoonedClass.getSpoonedClass().toString());
@@ -46,14 +46,13 @@ public class UTGenerator
 
 			CtMethod<?> actualMethod = M.getCtMethod();
 
-			// XXXXXX: Primero instrumento los mpetodos seleccionados
-			Instrumentator instrumentator = new Instrumentator(actualMethod, factory);
+			// XXXXXX: Primero instrumento los métodos seleccionados
 			try
 			{
-				instrumentator.process();
-			} catch (ParseException e)
+				instrument(k, ctClass, factory, actualMethod);
+			} catch (Exception e)
 			{
-				// TODO: tratar excepcion
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -123,6 +122,29 @@ public class UTGenerator
 		// XXXXXX: Devuelvo el String con la clase que contiene los casos de
 		// test
 		return _testClass.getGenerateTestClass();
+	}
+
+	private void instrument(int k, CtClass<?> ctClass, Factory factory, CtMethod<?> actualMethod) throws Exception
+	{
+		Instrumentator instrumentator = new Instrumentator(actualMethod, factory);
+		try
+		{
+			if (instrumentator.preProcessLoop(k))
+			{
+				storeClass(ctClass);
+
+				SpoonedClass sc = new SpoonedClass(_spoonedClass.getPathJavaFile());
+				sc.loadClass();
+				instrument(k, sc.getSpoonedClass(), sc.getFactory(), sc.getSpoonedMethod(actualMethod.getSimpleName()));
+				return;
+			}
+
+			instrumentator.process(k);
+		} catch (ParseException e)
+		{
+			// TODO: tratar excepcion
+			e.printStackTrace();
+		}
 	}
 
 	public Integer getGeneratedMethodsCount()

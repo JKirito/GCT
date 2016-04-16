@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Set;
 
 import controller.MainApp;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
@@ -30,6 +32,8 @@ public class SelectedClassController
 	private MainApp						_mainApp;
 	@FXML
 	private Button						_btnBuscar;
+	@FXML
+	private TextField					_txtCiclo;
 	@FXML
 	private Button						_btnGenerarTest;
 	@FXML
@@ -73,6 +77,22 @@ public class SelectedClassController
 						return param.isSelectedProperty();
 					}
 				}));
+
+		_txtCiclo.textProperty().addListener(new ChangeListener<String>() {
+
+			@Override
+			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+			{
+				try
+				{
+					Integer.parseInt(newValue);
+					_txtCiclo.setText(newValue);
+				} catch (NumberFormatException e)
+				{
+					_txtCiclo.setText(null);
+				}
+			}
+		});
 	}
 
 	public void openFileChooser()
@@ -117,8 +137,25 @@ public class SelectedClassController
 			ViewUtils.alertWarning("Operación no permitida", "Debe seleccionar al menos un método!");
 			return;
 		}
+
+		Integer k = null;
+		try
+		{
+			k = Integer.parseInt(_txtCiclo.getText());
+		} catch (Exception e)
+		{
+			// TODO: handle exception
+		}
+
+		if (_txtCiclo.getText().isEmpty() || k == null)
+		{
+			ViewUtils.alertWarning("Operación no permitida",
+					"Debe ingresar un número en el campo \"Profundidad\" ciclos");
+			return;
+		}
+
 		UTGenerator generator = new UTGenerator(spoonedClass, selectedMethods);
-		String testClass = generator.generarCasos();
+		String testClass = generator.generarCasos(k);
 
 		String classToTestName = spoonedClass.getSpoonedClassName();
 		String pathToSave = this._filePathJava.replace(classToTestName + javaExtension, "");

@@ -21,6 +21,7 @@ import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.factory.Factory;
 import utils.StoreFile;
+import view.ViewUtils;
 
 public class ConcolicMain
 {
@@ -34,10 +35,24 @@ public class ConcolicMain
 
 	public static void main(String[] args) throws Exception
 	{
+		String pathName = "/media/javi/DATOS/workspace/Eclipse/TPs_UNGS/GCT/src/test/Ejemplo.java";
+		SpoonedClass spoonedClass = new SpoonedClass(pathName);
+		try
+		{
+			spoonedClass.loadClass();
+		} catch (Exception e)
+		{
+			ViewUtils.alertException("Se ha producido un error al cargar la clase ", e);
+			return;
+		}
 
-		// compileAndRunClassExample();
-		// if (true)
-		// return;
+		Instrumentator instrumentator = new Instrumentator(spoonedClass.getAllMethods().iterator().next(),
+				spoonedClass.getFactory());
+		instrumentator.preProcessLoop(3);
+		System.out.println(spoonedClass.getSpoonedClass().toString());
+
+		if (true)
+			return;
 
 		className = "SrcClass";
 		String packagePathToInstrument = "src/input/";
@@ -56,7 +71,7 @@ public class ConcolicMain
 			throws ParseException, InstantiationException, IllegalAccessException, NoSuchMethodException,
 			InvocationTargetException, MalformedURLException, ClassNotFoundException
 	{
-		String pathName = "/home/javi/Escritorio/ejemplo/Ejemplo.java";
+		String pathName = "/media/javi/DATOS/workspace/Eclipse/TPs_UNGS/GCT/src/test/Ejemplo.java";
 
 		Launcher spoon = new Launcher();
 		CtClass<?> _ctClass;
@@ -75,7 +90,7 @@ public class ConcolicMain
 			CtMethod<?> method = m;
 
 			Instrumentator instrumentator = new Instrumentator(method, factory);
-			instrumentator.process();
+			instrumentator.process(2);
 		}
 		// System.out.println(_ctClass.getActualClass());
 		System.out.println(methodsList);
@@ -139,7 +154,7 @@ public class ConcolicMain
 		// return;
 		// }
 
-		instrumentator.process();
+		instrumentator.process(4);
 
 		storeClass(ctClass);
 		Class<?> clas = CompilerTool.CompileAndGetClass("tmp." + ctClass.getSimpleName(),

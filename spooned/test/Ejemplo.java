@@ -1,4 +1,4 @@
-package ejemplo;
+package test;
 
 
 public class Ejemplo {
@@ -6,9 +6,12 @@ public class Ejemplo {
         while (x < 3) {
             x = x + 1;
             int i = 0;
-            while (i < 3) {
+            int c = 3;
+            while ((i + c) < 5) {
                 i = i + 1;
+                c = i - 1;
             }
+            java.lang.System.out.println(("x = " + x));
         }
     }
 }

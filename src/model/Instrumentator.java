@@ -1,12 +1,11 @@
 package model;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.singularsys.jep.ParseException;
 
+import functions.RenameVar;
 import spoon.reflect.code.CtAssignment;
 import spoon.reflect.code.CtCodeSnippetExpression;
 import spoon.reflect.code.CtCodeSnippetStatement;
@@ -38,33 +37,128 @@ public class Instrumentator
 	private final String	CONCOLICEXPR_VARNAME					= "symbResolver";
 	private final String	SYMBCONDITIONAL_CLASS_NAME				= "model.SymbCondition";
 
-	private CtMethod<?>		_method;
+	// private CtMethod<?> _method;
 	private Factory			_factory;
+	private CtClass<?>		_instrumentedClass;
 
-	private final String	_renameStringVar						= "_xeditx_";
-
-	public Instrumentator(CtMethod<?> method, Factory factory)
+	/**
+	 * inicializa atributos de clase en el parámetro classToInstrument
+	 * 
+	 * @param classToInstrument
+	 * @param factory
+	 * @throws Exception
+	 */
+	public Instrumentator(String javaPathFileToinstrument) throws Exception
 	{
-		this._method = method;
-		this._factory = factory;
+		SpoonedClass spoonedClass = new SpoonedClass(javaPathFileToinstrument);
+		spoonedClass.loadClass();
+		_instrumentedClass = spoonedClass.getSpoonedClass();
+		_factory = spoonedClass.getFactory();
+		this.addFieldClass();
+	}
+
+	private void addFieldClass()
+	{
+		// si ya se agregaron las variables, no vuelvo a agregarlas
+		if (_instrumentedClass.getField(SYMB_CONDITIONS_LINKEDHASHSET_VARNAME) != null)
+			return;
+
+		// Agrego atributo List<symbCondition> a la clase
+		CtType<Set<SymbCondition>> typeSet = _factory.Class()
+				.create("java.util.LinkedHashSet<" + SYMBCONDITIONAL_CLASS_NAME + ">");
+		CtTypeReference<Set<SymbCondition>> type = _factory.Type().createReference(typeSet);
+		CtField<Set<SymbCondition>> snippetFieldListConditions = _factory.Code().createCtField(
+				SYMB_CONDITIONS_LINKEDHASHSET_VARNAME, type,
+				"new java.util.LinkedHashSet<" + SYMBCONDITIONAL_CLASS_NAME + ">()", ModifierKind.PUBLIC);
+		_instrumentedClass.addField(snippetFieldListConditions);
+
+		// Agrego atributo List<String> a la clase para tener los parametros del
+		// método
+		CtType<List<String>> typeListString = _factory.Class().create("java.util.List<String>");
+		CtTypeReference<List<String>> typeList = _factory.Type().createReference(typeListString);
+		CtField<List<String>> snippetFieldListSymbVars = _factory.Code().createCtField(PARAMS_LIST_VARNAME, typeList,
+				"null", ModifierKind.PUBLIC);
+		_instrumentedClass.addField(snippetFieldListSymbVars);
+
 	}
 
 	/**
 	 * Instrumenta el método recibido por parámetro. También agrega atributos a
-	 * la clase del método
+	 * la clase del método.
 	 * 
 	 * @param k
 	 *            cantidad de veces que ejecuto un ciclo
 	 * @throws ParseException
+	 * @throws NoSuchMethodException
+	 *             En caso de no encontrar el método en la clase a instrumentar
 	 */
-	public void process(int k) throws ParseException
+	public void instrumentMethod(String methodName, List<CtTypeReference<?>> typeReferences)
+			throws ParseException, NoSuchMethodException
 	{
-		this.initialize();
-		// this.preProcess();
-		this.preProcessLoop(k);
-		this.processAsigments();
-		this.processConditionalStatements();
+		CtMethod<?> instrumentedMethod = getCtMethod(methodName, typeReferences);
+		this.initializeMethod(instrumentedMethod);
+		this.processAsigments(instrumentedMethod);
+		this.processConditionalStatements(instrumentedMethod);
+	}
 
+	private CtMethod<?> getCtMethod(String methodName, List<CtTypeReference<?>> typeReferences)
+			throws NoSuchMethodException
+	{
+		CtTypeReference<?>[] typeReferencesArray = new CtTypeReference<?>[typeReferences.size()];
+		for (int i = 0; i < typeReferences.size(); i++)
+		{
+			typeReferencesArray[i] = typeReferences.get(i);
+		}
+
+		if (_instrumentedClass.getMethod(methodName, typeReferencesArray) == null)
+			throw new NoSuchMethodException("No se encontró el método " + methodName);
+
+		return _instrumentedClass.getMethod(methodName, typeReferencesArray);
+	}
+
+	/**
+	 * Agrega una <tt>LinkedHashSet</tt> como atributo de la clase que contendrá
+	 * las condiciones del método con los valores simbólicos de las variables.
+	 * Este atributo es public</br>
+	 * 
+	 * Crea el objeto ConcolicExpression para poder obtener los valores
+	 * simbólicos de las asignaciones.</br>
+	 * 
+	 * Crea un Map para almacenar las variables y sus valores simbólicos,
+	 * inicializándolo con las variables recibidas por parámetro en el
+	 * método.</br>
+	 * 
+	 * @param instrumentedMethod
+	 */
+	private void initializeMethod(CtMethod<?> instrumentedMethod)
+	{
+		CtCodeSnippetStatement snippetResolver = _factory.Code().createCodeSnippetStatement(
+				CONCOLICEXPR_CLASS_NAME + " " + CONCOLICEXPR_VARNAME + "= new " + CONCOLICEXPR_CLASS_NAME + "()");
+		instrumentedMethod.getBody().insertBegin(snippetResolver);
+
+		CtCodeSnippetStatement snippetAddParams = _factory.Code()
+				.createCodeSnippetStatement(PARAMS_LIST_VARNAME + " = new java.util.ArrayList<String>()");
+		instrumentedMethod.getBody().insertBegin(snippetAddParams);
+
+		CtCodeSnippetStatement snippetMap = _factory.Code().createCodeSnippetStatement(
+				"java.util.Map<String, String> " + SYMB_MAP_VARNAME + " = new java.util.HashMap<String, String>()");
+		snippetResolver.insertAfter(snippetMap);
+
+		// Agrego al map como clave los parámetros y como valor el simbolico de
+		// cada parametro. Ej: {x:x0,y:y0}
+		// También agrego al set sólo los valores symbólicos: x0, y0.
+		for (CtParameter<?> ctp : instrumentedMethod.getParameters())
+		{
+			String varName = ctp.getSimpleName();
+			String symVarName = ctp.getSimpleName().toString() + "0";
+			String soucePutInMap = getStringPutSymbolicMap(SYMB_MAP_VARNAME, varName, "\"" + symVarName + "\"");
+			CtCodeSnippetStatement snippetMapAsign = _factory.Code().createCodeSnippetStatement(soucePutInMap);
+			snippetMap.insertAfter(snippetMapAsign);
+
+			String addSymbVar = PARAMS_LIST_VARNAME + ".add(\"" + varName + "\")";
+			CtCodeSnippetStatement snippetAddSymbVar = _factory.Code().createCodeSnippetStatement(addSymbVar);
+			snippetResolver.insertBefore(snippetAddSymbVar);
+		}
 	}
 
 	// TODO: preprocesar statements como a++(CtUnaryOperatorImpl),
@@ -79,17 +173,19 @@ public class Instrumentator
 	 * si posee <b>"int a = b++ + x"</b> lo reemplazo por dos sentencias: <b>
 	 * "a = b + x"</b> y <b>"b = b + 1"</b> <br/>
 	 * 
+	 * @param instrumentedMethod
+	 * 
 	 * @return true si se modificó el método, es decir, había sentencias que el
 	 *         método process no identifica correctamente. <br/>
 	 *         false si no se modifica el método.
 	 */
-	public boolean preProcess()
+	public boolean preProcess(CtMethod<?> instrumentedMethod)
 	{
 		boolean change = false;
 		UnaryOperatorsUtils unaryOperatorUtils = new UnaryOperatorsUtils();
 
 		TypeFilter<CtUnaryOperatorImpl<?>> filterUnaryOperators = unaryOperatorUtils.getFilterUnaryOperator();
-		List<CtUnaryOperatorImpl<?>> unaryOperatorsStatements = _method.getElements(filterUnaryOperators);
+		List<CtUnaryOperatorImpl<?>> unaryOperatorsStatements = instrumentedMethod.getElements(filterUnaryOperators);
 
 		for (CtUnaryOperatorImpl<?> unOperatorSt : unaryOperatorsStatements)
 		{
@@ -101,7 +197,7 @@ public class Instrumentator
 
 		TypeFilter<CtLocalVariableImpl<?>> filterLocalVar = new TypeFilter<CtLocalVariableImpl<?>>(
 				CtLocalVariableImpl.class);
-		List<CtLocalVariableImpl<?>> localVars = _method.getElements(filterLocalVar);
+		List<CtLocalVariableImpl<?>> localVars = instrumentedMethod.getElements(filterLocalVar);
 
 		for (CtLocalVariableImpl<?> localVar : localVars)
 		{
@@ -114,7 +210,7 @@ public class Instrumentator
 		}
 
 		TypeFilter<CtAssignment<?, ?>> filterAssignment = new TypeFilter<CtAssignment<?, ?>>(CtAssignment.class);
-		List<CtAssignment<?, ?>> assignments = _method.getElements(filterAssignment);
+		List<CtAssignment<?, ?>> assignments = instrumentedMethod.getElements(filterAssignment);
 
 		for (CtAssignment<?, ?> concreteAssignment : assignments)
 		{
@@ -129,7 +225,8 @@ public class Instrumentator
 		OperatorAssignmentUtils operatorAssiUtils = new OperatorAssignmentUtils();
 		TypeFilter<CtOperatorAssignmentImpl<?, ?>> filterOperatorAssignment = operatorAssiUtils
 				.getFilterUnaryOperator();
-		List<CtOperatorAssignmentImpl<?, ?>> operatorAssignments = _method.getElements(filterOperatorAssignment);
+		List<CtOperatorAssignmentImpl<?, ?>> operatorAssignments = instrumentedMethod
+				.getElements(filterOperatorAssignment);
 
 		for (CtOperatorAssignmentImpl<?, ?> operAssignment : operatorAssignments)
 		{
@@ -144,66 +241,101 @@ public class Instrumentator
 	}
 
 	// TODO: add CtForImpl, CtForEachImpl, CtDoImpl,
-	public boolean preProcessLoop(int k)
-	{
-		boolean whileChanged = preProcessWhile(k);
-		return whileChanged;
-	}
-
 	/**
 	 * cambiar While por "k" ifs anidados
 	 * 
+	 * @param methodName
+	 *            nombre del método a instrumentar
+	 * @param typeReferences
+	 *            tipo de parametros en orden del método a instrumentar
 	 * @param k
+	 *            cantidad de ifs a reemplazar cada ciclo
+	 * @return true si se modificó la clase (porque había un while)
+	 * 
+	 * @throws NoSuchMethodException
+	 *             Si no existe el método según los parámetros recibidos
 	 */
-	private boolean preProcessWhile(int k)
+	public boolean preProcessLoop(String methodName, List<CtTypeReference<?>> typeReferences, int k)
+			throws NoSuchMethodException
+	{
+		CtMethod<?> instrumentedMethod = getCtMethod(methodName, typeReferences);
+		boolean whileChanged = preProcessWhile(instrumentedMethod, k);
+
+		return whileChanged;
+	}
+
+	private boolean preProcessWhile(CtMethod<?> instrumentedMethod, int k)
 	{
 		TypeFilter<CtWhileImpl> filterWhile = new TypeFilter<CtWhileImpl>(CtWhileImpl.class);
-		List<CtWhileImpl> whiles = _method.getElements(filterWhile);
+		List<CtWhileImpl> whiles = instrumentedMethod.getElements(filterWhile);
 
 		boolean change = !whiles.isEmpty();
-		Map<String, Integer> localVarsRenamed = new HashMap<>();
-		boolean changeLocalVarName = false;
+
+		if (change == false)
+			return change;
+
+		// Map<String, Integer> localVarsRenamed = new HashMap<>();
+		// boolean changeLocalVarName = false;
 		// TODO esto habria que cambiarlo para hacer un tratamiento de whiles
 		// anidados
-		int i = 0;
+		int lastWhile = whiles.size() - 1;
 		// for (int i = whiles.size() - 1; i >= 0; i--)
 		// {
-		Map<String, Integer> oldLocalVarsRenamed = new HashMap<>(localVarsRenamed);
-		localVarsRenamed.clear();
-		for (String varName : oldLocalVarsRenamed.keySet())
-		{
-			int numberLocalVar = oldLocalVarsRenamed.get(varName);
-			System.out.println("varNAme: " + varName);
-			localVarsRenamed.put(varName + _renameStringVar + numberLocalVar, numberLocalVar + 1);
-		}
-		CtWhileImpl concreteWhile = whiles.get(i);
+		// Map<String, Integer> oldLocalVarsRenamed = new
+		// HashMap<>(localVarsRenamed);
+		// localVarsRenamed.clear();
+		// for (String varName : oldLocalVarsRenamed.keySet())
+		// {
+		// int numberLocalVar = oldLocalVarsRenamed.get(varName);
+		// System.out.println("varNAme: " + varName);
+		// localVarsRenamed.put(varName + _renameStringVar + numberLocalVar,
+		// numberLocalVar + 1);
+		// }
+		CtWhileImpl concreteWhile = whiles.get(lastWhile);
 		// }
 		// for (CtWhileImpl concreteWhile : whiles)
 		// {
-		TypeFilter<CtLocalVariableReference<?>> filterLocalVar = new TypeFilter<CtLocalVariableReference<?>>(
-				CtLocalVariableReference.class);
-		List<CtLocalVariableReference<?>> localVars = concreteWhile.getElements(filterLocalVar);
 
-		for (CtLocalVariableReference<?> ctLocalVariableRef : localVars)
+		// Sólo en caso que haya declaraciones locales dentro del while tengo
+		// que cambiar nombre a las vars locales en los ifs anidados
+		TypeFilter<CtLocalVariableImpl<?>> filterLocalVar = new TypeFilter<CtLocalVariableImpl<?>>(
+				CtLocalVariableImpl.class);
+		List<CtLocalVariableImpl<?>> localVars = concreteWhile.getElements(filterLocalVar);
+		System.out.println("hay decl locales!!! " + !localVars.isEmpty());
+		if (!localVars.isEmpty())
 		{
-			String varName = ctLocalVariableRef.getSimpleName();
-			System.out.println("La varaible local es: " + varName);
-			Integer renameNumVar = null;
-			if (localVarsRenamed.get(varName) == null)
-				localVarsRenamed.put(varName, 1);
 
-			renameNumVar = localVarsRenamed.get(varName);
-			String newVarName = "";
+			TypeFilter<CtLocalVariableReference<?>> filterLocalVarRef = new TypeFilter<CtLocalVariableReference<?>>(
+					CtLocalVariableReference.class);
+			List<CtLocalVariableReference<?>> localVarsRef = concreteWhile.getElements(filterLocalVarRef);
 
-			if (changeLocalVarName)
-				newVarName = varName.substring(0, varName.length() - 1) + renameNumVar;
-			else
-				newVarName = varName + _renameStringVar + renameNumVar;
+			for (CtLocalVariableReference<?> ctLocalVariableRef : localVarsRef)
+			{
+				String varName = ctLocalVariableRef.getSimpleName();
 
-			ctLocalVariableRef.getDeclaration().setSimpleName(newVarName);
-			ctLocalVariableRef.setSimpleName(newVarName);
+				if (RenameVar.isRenamedInWhile(varName))
+					varName = RenameVar.getNextVar(varName);
+				else
+					varName = varName + RenameVar.ADD_TO_VAR_IN_WHILE + 1;
+
+				// Integer renameNumVar = null;
+				// if (localVarsRenamed.get(varName) == null)
+				// localVarsRenamed.put(varName, 1);
+				//
+				// renameNumVar = localVarsRenamed.get(varName);
+				// String newVarName = "";
+				//
+				// if (changeLocalVarName)
+				// newVarName = varName.substring(0, varName.length() - 1) +
+				// renameNumVar;
+				// else
+				// newVarName = varName + _renameStringVar + renameNumVar;
+
+				ctLocalVariableRef.getDeclaration().setSimpleName(varName);
+				ctLocalVariableRef.setSimpleName(varName);
+			}
 		}
-		changeLocalVarName = true;
+		// changeLocalVarName = true;
 		CtExpression<Boolean> loopExpression = concreteWhile.getLoopingExpression();
 		CtStatement whileBody = concreteWhile.getBody();
 
@@ -212,30 +344,42 @@ public class Instrumentator
 		ifStatment.setThenStatement(whileBody);
 
 		// k-1 porque ya agregue un if
-		joinNestedIfs(ifStatment, k - 1);
+		joinNestedIfs(ifStatment, k - 1, !localVars.isEmpty());
 		// joinNestedIfs(ifStatment, localVarsRenamed, k - 1);
 
 		concreteWhile.replace(ifStatment);
 		// change = true;
 		// }
 		System.out.println("**method**");
-		System.out.println(_method.toString());
+		System.out.println(instrumentedMethod.toString());
 		System.out.println("******************************");
 		return change;
 	}
 
-	@SuppressWarnings("unchecked")
-	private void joinNestedIfs(CtIf ifStatment, int k)
+	private void joinNestedIfs(CtIf ifStatment, int k, boolean containsLocalVar)
 	{
 		if (k == 0)
 			return;
 
-		String ifCondition = ifStatment.getCondition().toString();
-		// for(String var : localVarsRenamed.keySet())
-		// {
-		// ifCondition = ifCondition.replace(oldChar, newChar)
-		// }
-		CtCodeSnippetExpression<Boolean> snippetIfCondition = _factory.Code().createCodeSnippetExpression(ifCondition);
+		String newIfContent = "";
+		// String[] stringArray;
+		if (containsLocalVar)
+		{
+			newIfContent = RenameVar.renameVar(ifStatment.getCondition().toString());
+			// stringArray = ifStatment.getCondition().toString().split(" | ");
+
+			// for (int i = 0; i < stringArray.length; i++)
+			// {
+			// if (RenameVar.isRenamedInWhile(stringArray[i]))
+			// newIfContent += " " + RenameVar.getNextVar(stringArray[i]) + " ";
+			// else
+			// newIfContent += " " + stringArray[i] + " ";
+			// }
+		} else
+		{
+			newIfContent = ifStatment.getCondition().toString();
+		}
+		CtCodeSnippetExpression<Boolean> snippetIfCondition = _factory.Code().createCodeSnippetExpression(newIfContent);
 
 		// Si hay declaraciones locales, tengo que cambiarles el nombre a las
 		// variables
@@ -245,45 +389,30 @@ public class Instrumentator
 		// System.out.println("local var: " +
 		// ifStatment.getThenStatement().getElements(filterLocalVar).toString());
 
-		CtCodeSnippetStatement snippetThenBody = _factory.Code()
-				.createCodeSnippetStatement(ifStatment.getThenStatement().toString());
+		if (containsLocalVar)
+		{
+			newIfContent = RenameVar.renameVar(ifStatment.getThenStatement().toString());
+			// stringArray = ifStatment.getThenStatement().toString().split("
+			// ");
+			// for (int i = 0; i < stringArray.length; i++)
+			// {
+			// if (RenameVar.isRenamedInWhile(stringArray[i]))
+			// newIfContent += " " + RenameVar.getNextVar(stringArray[i]) + " ";
+			// else
+			// newIfContent += " " + stringArray[i] + " ";
+			// }
+		} else
+		{
+			newIfContent = ifStatment.getThenStatement().toString();
+		}
+		CtCodeSnippetStatement snippetThenBody = _factory.Code().createCodeSnippetStatement(newIfContent);
 
 		CtIf ifStatmentNested = _factory.Core().createIf();
 		ifStatmentNested.setCondition(snippetIfCondition);
 		ifStatmentNested.setThenStatement(snippetThenBody);
 
 		ifStatment.getThenStatement().insertAfter(ifStatmentNested);
-		joinNestedIfs(ifStatmentNested, k - 1);
-	}
-
-	/**
-	 * Instrumenta el método agregando las condiciones que aparecen en los
-	 * ifStatement del método en una lista
-	 * 
-	 * @throws ParseException
-	 */
-	private void processConditionalStatements() throws ParseException
-	{
-		TypeFilter<CtIf> filterAssignment = new TypeFilter<CtIf>(CtIf.class);
-		List<CtIf> ifStatements = _method.getElements(filterAssignment);
-
-		int n = 0;
-		for (CtIf ifSt : ifStatements)
-		{
-			n++;
-			String condition = ifSt.getCondition().toString();
-
-			String varNameToAssignExpression = "symbExprConditional_" + n;
-			CtCodeSnippetStatement snippetSymbExpr = _factory.Code().createCodeSnippetStatement(
-					getDeclaringSymbolicCondition(varNameToAssignExpression, condition, SYMB_MAP_VARNAME));
-			ifSt.insertBefore(snippetSymbExpr);
-
-			CtCodeSnippetStatement snippetIf = _factory.Code()
-					.createCodeSnippetStatement("if (" + condition + ") " + SYMB_CONDITIONS_LINKEDHASHSET_VARNAME
-							+ ".add(" + varNameToAssignExpression + "); else " + SYMB_CONDITIONS_LINKEDHASHSET_VARNAME
-							+ ".add(" + varNameToAssignExpression + ".makeNegado())");
-			ifSt.insertBefore(snippetIf);
-		}
+		joinNestedIfs(ifStatmentNested, k - 1, containsLocalVar);
 	}
 
 	/**
@@ -294,14 +423,16 @@ public class Instrumentator
 	 * Ejemplo: "x = 12 + y" se guarda en un map(x:12+y0), siendo y0 el valor
 	 * simbólico de 'y' en ese momento
 	 * 
+	 * @param instrumentedMethod
+	 * 
 	 * @throws ParseException
 	 */
-	private void processAsigments() throws ParseException
+	private void processAsigments(CtMethod<?> instrumentedMethod) throws ParseException
 	{
 
 		TypeFilter<CtLocalVariableImpl<?>> filterLocalVar = new TypeFilter<CtLocalVariableImpl<?>>(
 				CtLocalVariableImpl.class);
-		List<CtLocalVariableImpl<?>> localVars = _method.getElements(filterLocalVar);
+		List<CtLocalVariableImpl<?>> localVars = instrumentedMethod.getElements(filterLocalVar);
 
 		// System.out.println("Declaraciones Locales: " + localVars);
 		int i = 0;
@@ -322,7 +453,7 @@ public class Instrumentator
 		}
 
 		TypeFilter<CtAssignment<?, ?>> filterAssignment = new TypeFilter<CtAssignment<?, ?>>(CtAssignment.class);
-		List<CtAssignment<?, ?>> assignments = _method.getElements(filterAssignment);
+		List<CtAssignment<?, ?>> assignments = instrumentedMethod.getElements(filterAssignment);
 
 		// System.out.println("Asignaciones: " + assignments);
 		int a = 0;
@@ -354,111 +485,77 @@ public class Instrumentator
 	}
 
 	/**
-	 * Agrega una <tt>LinkedHashSet</tt> como atributo de la clase que contendrá
-	 * las condiciones del método con los valores simbólicos de las variables.
-	 * Este atributo es public</br>
+	 * Instrumenta el método agregando las condiciones que aparecen en los
+	 * ifStatement del método en una lista
 	 * 
-	 * Crea el objeto ConcolicExpression para poder obtener los valores
-	 * simbólicos de las asignaciones.</br>
+	 * @param instrumentedMethod
 	 * 
-	 * Crea un Map para almacenar las variables y sus valores simbólicos,
-	 * inicializándolo con las variables recibidas por parámetro en el
-	 * método.</br>
+	 * @throws ParseException
 	 */
-	private void initialize()
+	private void processConditionalStatements(CtMethod<?> instrumentedMethod) throws ParseException
 	{
-		CtClass<?> clas = _method.getParent(CtClass.class);
+		TypeFilter<CtIf> filterAssignment = new TypeFilter<CtIf>(CtIf.class);
+		List<CtIf> ifStatements = instrumentedMethod.getElements(filterAssignment);
 
-		// Agrego atributo List<symbCondition> a la clase
-		CtType<Set<SymbCondition>> typeSet = _factory.Class()
-				.create("java.util.LinkedHashSet<" + SYMBCONDITIONAL_CLASS_NAME + ">");
-		CtTypeReference<Set<SymbCondition>> type = _factory.Type().createReference(typeSet);
-		CtField<Set<SymbCondition>> snippetFieldListConditions = _factory.Code().createCtField(
-				SYMB_CONDITIONS_LINKEDHASHSET_VARNAME, type,
-				"new java.util.LinkedHashSet<" + SYMBCONDITIONAL_CLASS_NAME + ">()", ModifierKind.PUBLIC);
-		clas.addField(snippetFieldListConditions);
-
-		// Agrego atributo List<String> a la clase para tener los parametros del
-		// método
-		CtType<List<String>> typeListString = _factory.Class().create("java.util.List<String>");
-		CtTypeReference<List<String>> typeList = _factory.Type().createReference(typeListString);
-		CtField<List<String>> snippetFieldListSymbVars = _factory.Code().createCtField(PARAMS_LIST_VARNAME, typeList,
-				"null", ModifierKind.PUBLIC);
-		clas.addField(snippetFieldListSymbVars);
-
-		// TODO_ crear metodo getCondition()
-		// Set<ModifierKind> set = new HashSet<>();
-		// set.add(ModifierKind.PUBLIC);
-		// CtMethod<?> getMethod = _factory.Method().create(clas, set, type,
-		// "getConditions", null, null);
-		// CtCodeSnippetStatement bodyGetMethod = _factory.Code()
-		// .createCodeSnippetStatement("return " +
-		// SYMB_CONDITIONS_LIST_VARNAME);
-		// CtBlock<?> bodyBlock = _factory.Code().createCtBlock(bodyGetMethod);
-		// // getMethod.setBody(bodyGetMethod);
-		// // getMethod.getBody().insertBefore(bodyGetMethod);
-
-		CtCodeSnippetStatement snippetResolver = _factory.Code().createCodeSnippetStatement(
-				CONCOLICEXPR_CLASS_NAME + " " + CONCOLICEXPR_VARNAME + "= new " + CONCOLICEXPR_CLASS_NAME + "()");
-		_method.getBody().insertBegin(snippetResolver);
-
-		CtCodeSnippetStatement snippetAddParams = _factory.Code()
-				.createCodeSnippetStatement(PARAMS_LIST_VARNAME + " = new java.util.ArrayList<String>()");
-		_method.getBody().insertBegin(snippetAddParams);
-
-		CtCodeSnippetStatement snippetMap = _factory.Code().createCodeSnippetStatement(
-				"java.util.Map<String, String> " + SYMB_MAP_VARNAME + " = new java.util.HashMap<String, String>()");
-		snippetResolver.insertAfter(snippetMap);
-
-		// Agrego al map como clave los parámetros y como valor el simbolico de
-		// cada parametro. Ej: {x:x0,y:y0}
-		// También agrego al set sólo los valores symbólicos: x0, y0.
-		for (CtParameter<?> ctp : _method.getParameters())
+		int n = 0;
+		for (CtIf ifSt : ifStatements)
 		{
-			String varName = ctp.getSimpleName();
-			String symVarName = ctp.getSimpleName().toString() + "0";
-			String soucePutInMap = getStringPutSymbolicMap(SYMB_MAP_VARNAME, varName, "\"" + symVarName + "\"");
-			CtCodeSnippetStatement snippetMapAsign = _factory.Code().createCodeSnippetStatement(soucePutInMap);
-			snippetMap.insertAfter(snippetMapAsign);
+			n++;
+			String condition = ifSt.getCondition().toString();
 
-			String addSymbVar = PARAMS_LIST_VARNAME + ".add(\"" + varName + "\")";
-			CtCodeSnippetStatement snippetAddSymbVar = _factory.Code().createCodeSnippetStatement(addSymbVar);
-			snippetResolver.insertBefore(snippetAddSymbVar);
-			// _method.getBody().insertEnd(snippetAddSymbVar);
+			String varNameToAssignExpression = "symbExprConditional_" + n;
+			CtCodeSnippetStatement snippetSymbExpr = _factory.Code().createCodeSnippetStatement(
+					getDeclaringSymbolicCondition(varNameToAssignExpression, condition, SYMB_MAP_VARNAME));
+			ifSt.insertBefore(snippetSymbExpr);
+
+			CtCodeSnippetStatement snippetIf = _factory.Code()
+					.createCodeSnippetStatement("if (" + condition + ") " + SYMB_CONDITIONS_LINKEDHASHSET_VARNAME
+							+ ".add(" + varNameToAssignExpression + "); else " + SYMB_CONDITIONS_LINKEDHASHSET_VARNAME
+							+ ".add(" + varNameToAssignExpression + ".makeNegado())");
+			ifSt.insertBefore(snippetIf);
 		}
 	}
 
-	public String getStringPutSymbolicMap(String mapName, String varName, String symVarName)
+	private String getStringPutSymbolicMap(String mapName, String varName, String symVarName)
 	{
 		return mapName + ".put(\"" + varName + "\"," + symVarName + ")";
 	}
 
-	public String getStringCallMethodGetSymbolicExpression(String assignment, String mapName)
+	private String getStringCallMethodGetSymbolicExpression(String assignment, String mapName)
 	{
 		return CONCOLICEXPR_VARNAME + ".getSymbolicExpression(\"" + assignment + "\"," + mapName + ")";
 	}
 
-	public String getDeclaringSymbolicCondition(String varNameToAssign, String assignment, String mapName)
+	private String getDeclaringSymbolicCondition(String varNameToAssign, String assignment, String mapName)
 	{
 		return SYMBCONDITIONAL_CLASS_NAME + " " + varNameToAssign + " = new " + SYMBCONDITIONAL_CLASS_NAME + "("
 				+ getStringCallMethodGetSymbolicExpression(assignment, mapName) + ")";
 	}
 
-	public String getDeclaringStringCondition(String varNameToAssign, String assignment, String mapName)
+	private String getDeclaringStringCondition(String varNameToAssign, String assignment, String mapName)
 	{
 		return "String " + varNameToAssign + " = " + getStringCallMethodGetSymbolicExpression(assignment, mapName);
 	}
 
-	public void showStatements()
+	/**
+	 * only for test/ debug. No admite sobrecarga de métodos
+	 */
+	public void showStatements(String methodName)
 	{
+		CtMethod<?> instrumentedMethod = _instrumentedClass.getMethodsByName(methodName).get(0);
 		TypeFilter<CtStatement> f = new TypeFilter<CtStatement>(CtStatement.class);
-		List<CtStatement> st = _method.getElements(f);
+		List<CtStatement> st = instrumentedMethod.getElements(f);
 
 		for (CtStatement s : st)
 		{
 			System.out.println("S--> " + s.toString() + " : " + s.getClass());
 
 		}
+	}
+
+	public CtClass<?> getInstrumentedClass()
+	{
+		return _instrumentedClass;
 	}
 
 }

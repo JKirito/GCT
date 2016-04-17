@@ -1,6 +1,4 @@
-package test;
-
-
+package instrument;
 public class Ejemplo {
     public void method(int x, int y) {
         y = x;
@@ -16,4 +14,3 @@ public class Ejemplo {
         }
     }
 }
-

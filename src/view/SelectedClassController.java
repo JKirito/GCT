@@ -155,7 +155,18 @@ public class SelectedClassController
 		}
 
 		UTGenerator generator = new UTGenerator(spoonedClass, selectedMethods);
-		String testClass = generator.generarCasos(k);
+		String testClass = null;
+		try
+		{
+			testClass = generator.generarCasos(k);
+		} catch (IOException e1)
+		{
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			ViewUtils.alertException("Error al guardar un archivo!", e1);
+			this._paneLoadClass.setDisable(true);
+			return;
+		}
 
 		String classToTestName = spoonedClass.getSpoonedClassName();
 		String pathToSave = this._filePathJava.replace(classToTestName + javaExtension, "");

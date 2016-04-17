@@ -46,9 +46,10 @@ public class ConcolicMain
 			return;
 		}
 
-		Instrumentator instrumentator = new Instrumentator(spoonedClass.getAllMethods().iterator().next(),
-				spoonedClass.getFactory());
-		instrumentator.preProcessLoop(3);
+		// Instrumentator instrumentator = new
+		// Instrumentator(spoonedClass.getAllMethods().iterator().next(),
+		// spoonedClass.getFactory());
+		// instrumentator.preProcessLoop(3);
 		System.out.println(spoonedClass.getSpoonedClass().toString());
 
 		if (true)
@@ -89,8 +90,9 @@ public class ConcolicMain
 			methodsList.add(m.getSimpleName());
 			CtMethod<?> method = m;
 
-			Instrumentator instrumentator = new Instrumentator(method, factory);
-			instrumentator.process(2);
+			// Instrumentator instrumentator = new Instrumentator(method,
+			// factory);
+			// instrumentator.process(2);
 		}
 		// System.out.println(_ctClass.getActualClass());
 		System.out.println(methodsList);
@@ -144,7 +146,7 @@ public class ConcolicMain
 		Factory factory = spoonedClass.getFactory();
 		CtClass<?> ctClass = spoonedClass.getSpoonedClass();
 
-		Instrumentator instrumentator = new Instrumentator(method, factory);
+		// Instrumentator instrumentator = new Instrumentator(method, factory);
 		// TODO: revisar preprocess!! a= b++ - --b, etc...
 		// if (instrumentator.preProcess())
 		// {
@@ -154,7 +156,7 @@ public class ConcolicMain
 		// return;
 		// }
 
-		instrumentator.process(4);
+		// instrumentator.process(4);
 
 		storeClass(ctClass);
 		Class<?> clas = CompilerTool.CompileAndGetClass("tmp." + ctClass.getSimpleName(),

@@ -14,8 +14,9 @@ public class Ejemplo
 	// }
 	// }
 
-	public void method(int x)
+	public void method(int x, int y)
 	{
+		y = x;
 		// if (x >= 0)
 		// {
 		// x = 0;

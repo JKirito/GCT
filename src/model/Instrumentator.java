@@ -161,26 +161,33 @@ public class Instrumentator
 		}
 	}
 
-	// TODO: preprocesar statements como a++(CtUnaryOperatorImpl),
+	// preprocesa statements como a++(CtUnaryOperatorImpl),
 	// a+=2(CtOperatorAssignmentImpl), a=b++ + c..
+	// TODO no funciona para casos como "a = --b - --b;"
 	/**
 	 * Realiza un preproceso sobre el método deseado para reemplazar las
 	 * sentencias que no son identificadas correctamente por Spoon(como a++,
-	 * a+=2, a=b++) en el proceso principal. Reemplazo estas sentencias por
-	 * sentencias sin "abreviaturas".Ejemeplos:<br/>
+	 * a+=2, a=b++). Reemplazo estas sentencias por sentencias sin
+	 * "abreviaturas".Ejemeplos:<br/>
 	 * si posee <b>"a++"</b> lo reemplazo por <b>"a = a + 1"</b> <br/>
 	 * si posee <b>"a*=2+x"</b> lo reemplazo por <b>"a = a * (2+x)"</b> <br/>
 	 * si posee <b>"int a = b++ + x"</b> lo reemplazo por dos sentencias: <b>
-	 * "a = b + x"</b> y <b>"b = b + 1"</b> <br/>
+	 * "int a = b + x"</b> y <b>"b = b + 1"</b> <br/>
+	 * 
+	 * <b>IMPORTANTE!</b> No funciona para casos similares a <br/>
+	 * <b>"a = --b - --b"</b>
 	 * 
 	 * @param instrumentedMethod
 	 * 
 	 * @return true si se modificó el método, es decir, había sentencias que el
 	 *         método process no identifica correctamente. <br/>
 	 *         false si no se modifica el método.
+	 * @throws NoSuchMethodException
 	 */
-	public boolean preProcess(CtMethod<?> instrumentedMethod)
+	public boolean preProcess(String methodName, List<CtTypeReference<?>> typeReferences, int k)
+			throws NoSuchMethodException
 	{
+		CtMethod<?> instrumentedMethod = getCtMethod(methodName, typeReferences);
 		boolean change = false;
 		UnaryOperatorsUtils unaryOperatorUtils = new UnaryOperatorsUtils();
 
@@ -222,15 +229,15 @@ public class Instrumentator
 			}
 		}
 
-		OperatorAssignmentUtils operatorAssiUtils = new OperatorAssignmentUtils();
-		TypeFilter<CtOperatorAssignmentImpl<?, ?>> filterOperatorAssignment = operatorAssiUtils
+		OperatorAssignmentUtils operatorAssigUtils = new OperatorAssignmentUtils();
+		TypeFilter<CtOperatorAssignmentImpl<?, ?>> filterOperatorAssignment = operatorAssigUtils
 				.getFilterUnaryOperator();
 		List<CtOperatorAssignmentImpl<?, ?>> operatorAssignments = instrumentedMethod
 				.getElements(filterOperatorAssignment);
 
 		for (CtOperatorAssignmentImpl<?, ?> operAssignment : operatorAssignments)
 		{
-			String operAssignmentParsed = operatorAssiUtils.getStringParsedOperatorAssignment(operAssignment);
+			String operAssignmentParsed = operatorAssigUtils.getStringParsedOperatorAssignment(operAssignment);
 			CtCodeSnippetStatement snippetoperAssignmentParsed = _factory.Code()
 					.createCodeSnippetStatement(operAssignmentParsed);
 			operAssignment.replace(snippetoperAssignmentParsed);
@@ -259,9 +266,30 @@ public class Instrumentator
 			throws NoSuchMethodException
 	{
 		CtMethod<?> instrumentedMethod = getCtMethod(methodName, typeReferences);
-		boolean whileChanged = preProcessWhile(instrumentedMethod, k);
 
-		return whileChanged;
+		boolean forChanged = preProcessFor(instrumentedMethod);
+
+		return preProcessWhile(instrumentedMethod, k);
+	}
+
+	/**
+	 * Reemplaza los for(int i=0;condition;i++) por un while<br/>
+	 * 
+	 * <b>int = 0;<br/>
+	 * while(condition){<br/>
+	 * ...<br/>
+	 * i++;<br/>
+	 * }<br/>
+	 * </b>
+	 * 
+	 * @param instrumentedMethod
+	 * @return true si encontró un for para reemplazar
+	 */
+	// CtForImpl
+	private boolean preProcessFor(CtMethod<?> instrumentedMethod)
+	{
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	private boolean preProcessWhile(CtMethod<?> instrumentedMethod, int k)
@@ -274,34 +302,14 @@ public class Instrumentator
 		if (change == false)
 			return change;
 
-		// Map<String, Integer> localVarsRenamed = new HashMap<>();
-		// boolean changeLocalVarName = false;
-		// TODO esto habria que cambiarlo para hacer un tratamiento de whiles
-		// anidados
-		int lastWhile = whiles.size() - 1;
-		// for (int i = whiles.size() - 1; i >= 0; i--)
-		// {
-		// Map<String, Integer> oldLocalVarsRenamed = new
-		// HashMap<>(localVarsRenamed);
-		// localVarsRenamed.clear();
-		// for (String varName : oldLocalVarsRenamed.keySet())
-		// {
-		// int numberLocalVar = oldLocalVarsRenamed.get(varName);
-		// System.out.println("varNAme: " + varName);
-		// localVarsRenamed.put(varName + _renameStringVar + numberLocalVar,
-		// numberLocalVar + 1);
-		// }
-		CtWhileImpl concreteWhile = whiles.get(lastWhile);
-		// }
-		// for (CtWhileImpl concreteWhile : whiles)
-		// {
+		CtWhileImpl concreteWhile = whiles.get(0);
 
 		// Sólo en caso que haya declaraciones locales dentro del while tengo
 		// que cambiar nombre a las vars locales en los ifs anidados
 		TypeFilter<CtLocalVariableImpl<?>> filterLocalVar = new TypeFilter<CtLocalVariableImpl<?>>(
 				CtLocalVariableImpl.class);
 		List<CtLocalVariableImpl<?>> localVars = concreteWhile.getElements(filterLocalVar);
-		System.out.println("hay decl locales!!! " + !localVars.isEmpty());
+
 		if (!localVars.isEmpty())
 		{
 
@@ -318,19 +326,6 @@ public class Instrumentator
 				else
 					varName = varName + RenameVar.ADD_TO_VAR_IN_WHILE + 1;
 
-				// Integer renameNumVar = null;
-				// if (localVarsRenamed.get(varName) == null)
-				// localVarsRenamed.put(varName, 1);
-				//
-				// renameNumVar = localVarsRenamed.get(varName);
-				// String newVarName = "";
-				//
-				// if (changeLocalVarName)
-				// newVarName = varName.substring(0, varName.length() - 1) +
-				// renameNumVar;
-				// else
-				// newVarName = varName + _renameStringVar + renameNumVar;
-
 				ctLocalVariableRef.getDeclaration().setSimpleName(varName);
 				ctLocalVariableRef.setSimpleName(varName);
 			}
@@ -345,14 +340,8 @@ public class Instrumentator
 
 		// k-1 porque ya agregue un if
 		joinNestedIfs(ifStatment, k - 1, !localVars.isEmpty());
-		// joinNestedIfs(ifStatment, localVarsRenamed, k - 1);
 
 		concreteWhile.replace(ifStatment);
-		// change = true;
-		// }
-		System.out.println("**method**");
-		System.out.println(instrumentedMethod.toString());
-		System.out.println("******************************");
 		return change;
 	}
 
@@ -362,49 +351,23 @@ public class Instrumentator
 			return;
 
 		String newIfContent = "";
-		// String[] stringArray;
 		if (containsLocalVar)
 		{
-			newIfContent = RenameVar.renameVar(ifStatment.getCondition().toString());
-			// stringArray = ifStatment.getCondition().toString().split(" | ");
-
-			// for (int i = 0; i < stringArray.length; i++)
-			// {
-			// if (RenameVar.isRenamedInWhile(stringArray[i]))
-			// newIfContent += " " + RenameVar.getNextVar(stringArray[i]) + " ";
-			// else
-			// newIfContent += " " + stringArray[i] + " ";
-			// }
+			newIfContent = RenameVar.renameVarsIn(ifStatment.getCondition().toString());
 		} else
 		{
 			newIfContent = ifStatment.getCondition().toString();
 		}
 		CtCodeSnippetExpression<Boolean> snippetIfCondition = _factory.Code().createCodeSnippetExpression(newIfContent);
 
-		// Si hay declaraciones locales, tengo que cambiarles el nombre a las
-		// variables
-		// TypeFilter<CtLocalVariableImpl<?>> filterLocalVar = new
-		// TypeFilter<CtLocalVariableImpl<?>>(
-		// CtLocalVariableImpl.class);
-		// System.out.println("local var: " +
-		// ifStatment.getThenStatement().getElements(filterLocalVar).toString());
-
 		if (containsLocalVar)
 		{
-			newIfContent = RenameVar.renameVar(ifStatment.getThenStatement().toString());
-			// stringArray = ifStatment.getThenStatement().toString().split("
-			// ");
-			// for (int i = 0; i < stringArray.length; i++)
-			// {
-			// if (RenameVar.isRenamedInWhile(stringArray[i]))
-			// newIfContent += " " + RenameVar.getNextVar(stringArray[i]) + " ";
-			// else
-			// newIfContent += " " + stringArray[i] + " ";
-			// }
+			newIfContent = RenameVar.renameVarsIn(ifStatment.getThenStatement().toString());
 		} else
 		{
 			newIfContent = ifStatment.getThenStatement().toString();
 		}
+
 		CtCodeSnippetStatement snippetThenBody = _factory.Code().createCodeSnippetStatement(newIfContent);
 
 		CtIf ifStatmentNested = _factory.Core().createIf();

@@ -46,19 +46,19 @@ public class RenameVar
 		return n;
 	}
 
-	public static String renameVar(String content)
+	public static String renameVarsIn(String content)
 	{
-		String newContentWithRenamedVars = "";
+		StringBuilder newContentWithRenamedVars = new StringBuilder();
 		StringTokenizer st = new StringTokenizer(content, " ()", true);
 		while (st.hasMoreTokens())
 		{
 			String token = st.nextToken();
 			if (RenameVar.isRenamedInWhile(token))
-				newContentWithRenamedVars += RenameVar.getNextVar(token);
+				newContentWithRenamedVars.append(RenameVar.getNextVar(token));
 			else
-				newContentWithRenamedVars += token;
+				newContentWithRenamedVars.append(token);
 		}
-		return newContentWithRenamedVars;
+		return newContentWithRenamedVars.toString();
 	}
 
 }

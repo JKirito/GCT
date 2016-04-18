@@ -1,16 +1,16 @@
 package examples;
 
-import functions.RenameVar;
+import model.Instrumentator;
 
 public class Main
 {
 
-	public static void main(String[] args)
+	public static void main(String[] args) throws Exception
 	{
-		String var = "i" + RenameVar.ADD_TO_VAR_IN_WHILE + "_12";
-		System.out.println("var: " + var);
-		System.out.println(RenameVar.isRenamedInWhile(var));
+		String path = "/media/javi/DATOS/workspace/Eclipse/TPs_UNGS/GCT/src/test/Ejemplo.java";
 
+		Instrumentator instrument = new Instrumentator(path);
+		instrument.showStatements("m2");
 	}
 
 }

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TestClass
+public class TestGenerator
 {
 	/**
 	 * String de la Clase Test a generar
@@ -29,7 +29,7 @@ public class TestClass
 
 	private String					_packetClass;
 
-	public TestClass(String classToTest, String packetClass)
+	public TestGenerator(String classToTest, String packetClass)
 	{
 		this._stringClassTest = new StringBuilder();
 		this._methods = new ArrayList<>();

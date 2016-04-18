@@ -3,41 +3,38 @@ package test;
 public class Ejemplo
 {
 
-	// public void max(int x, int y)
-	// {
-	// if (x >= y)
-	// {
-	// x = 0;
-	// } else
-	// {
-	// y = 0;
-	// }
-	// }
-
-	public void method(int x, int y)
+	public void method(int x)
 	{
-		y = x;
-		// if (x >= 0)
-		// {
-		// x = 0;
-		// } else if (x < -10)
-		// {
-		// x = x * 10;
-		// }
-
-		while (x < 3)
+		int a = x--;
+		while (x < 2)
 		{
 			x = x + 1;
-			int i = 0;
-			int c = 3;
-			while (i + c < 5)
+			int i = x;
+			while (i < 5)
 			{
-				i = i + 1;
-				c = i - 1;
+				i++;
 			}
-			System.out.println("x = " + x);
 		}
 
+	}
+
+	public void m2(int x)
+	{
+		// for (int i = 0; i < 5; i++)
+		// {
+		// System.out.println("va por el i=" + i);
+		// }
+		// System.out.println("/////////////");
+		// List<Integer> list = new ArrayList<>();
+		// for (Integer a : list)
+		// {
+		// System.out.println("UUUU");
+		// }
+
+		do
+		{
+			System.out.println("hola!!!");
+		} while (x < 19);
 	}
 
 }

@@ -89,12 +89,15 @@ public class CompilerTool
 	}
 
 	/**
-	 * compile your files by JavaCompiler
+	 * compile your files by JavaCompiler Antes de compilar la clase, creo el
+	 * directorio donde va a guardarse el .class(es necesario que exista!)
 	 * 
 	 * @return true si la compilación fue correcta
 	 */
 	private static boolean compile(Iterable<? extends JavaFileObject> files)
 	{
+		new File(_classOutputFolder).mkdirs();
+
 		// get system compiler:
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 

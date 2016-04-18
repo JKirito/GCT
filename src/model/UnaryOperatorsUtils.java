@@ -9,6 +9,12 @@ import spoon.reflect.factory.Factory;
 import spoon.reflect.visitor.filter.TypeFilter;
 import spoon.support.reflect.code.CtUnaryOperatorImpl;
 
+/**
+ * Manipula sentencias del estilo a++, --x,...
+ * 
+ * @author javi
+ *
+ */
 public class UnaryOperatorsUtils
 {
 	TypeFilter<CtUnaryOperatorImpl<?>> filterUnaryOperators;
@@ -44,65 +50,30 @@ public class UnaryOperatorsUtils
 		return var + " = " + var + " " + operator + " " + 1;
 	}
 
-	// public void replaceUnaryOperatorAssignment(CtLocalVariableImpl<?>
-	// localVar)
-	// {
-	// if (containsUnaryOperator(localVar))
-	// {
-	// Factory factory = localVar.getFactory();
-	// String newLocalVarImpl = localVar.toString();
-	// System.out.println("LOCAL VAR INITT: " + newLocalVarImpl);
-	// for (CtUnaryOperatorImpl<?> uo :
-	// localVar.getAssignment().getElements(this.getFilterUnaryOperator()))
-	// {
-	// // System.out.println("/////// " + uo.toString());
-	// String parsed = getStringParsedUnaryOperator(uo);
-	//
-	// CtCodeSnippetStatement snippetUnOperParsed =
-	// factory.Code().createCodeSnippetStatement(parsed);
-	//
-	// if (uo.getKind().equals(UnaryOperatorKind.POSTDEC) ||
-	// uo.getKind().equals(UnaryOperatorKind.POSTINC))
-	// {
-	// localVar.insertAfter(snippetUnOperParsed);
-	//
-	// } else if (uo.getKind().equals(UnaryOperatorKind.PREDEC)
-	// || uo.getKind().equals(UnaryOperatorKind.PREINC))
-	// {
-	// localVar.insertBefore(snippetUnOperParsed);
-	// }
-	// newLocalVarImpl = newLocalVarImpl.replace(uo.toString(),
-	// uo.getOperand().toString());
-	// }
-	//
-	// CtCodeSnippetStatement snippetLocalVarParsed =
-	// factory.Code().createCodeSnippetStatement(newLocalVarImpl);
-	// localVar.replace(snippetLocalVarParsed);
-	//
-	// }
-	// }
-
 	public void replaceUnaryOperatorAssignment(CtRHSReceiver<?> element, Factory factory)
 	{
 		if (containsUnaryOperator(element))
 		{
 			String newLocalVarImpl = element.toString();
-			for (CtUnaryOperatorImpl<?> uo : element.getAssignment().getElements(this.getFilterUnaryOperator()))
+			for (CtUnaryOperatorImpl<?> unaryOperator : element.getAssignment()
+					.getElements(this.getFilterUnaryOperator()))
 			{
-				String parsed = getStringParsedUnaryOperator(uo);
+				String parsed = getStringParsedUnaryOperator(unaryOperator);
 
 				CtCodeSnippetStatement snippetUnOperParsed = factory.Code().createCodeSnippetStatement(parsed);
 
-				if (uo.getKind().equals(UnaryOperatorKind.POSTDEC) || uo.getKind().equals(UnaryOperatorKind.POSTINC))
+				if (unaryOperator.getKind().equals(UnaryOperatorKind.POSTDEC)
+						|| unaryOperator.getKind().equals(UnaryOperatorKind.POSTINC))
 				{
 					((CtStatement) element).insertAfter(snippetUnOperParsed);
 
-				} else if (uo.getKind().equals(UnaryOperatorKind.PREDEC)
-						|| uo.getKind().equals(UnaryOperatorKind.PREINC))
+				} else if (unaryOperator.getKind().equals(UnaryOperatorKind.PREDEC)
+						|| unaryOperator.getKind().equals(UnaryOperatorKind.PREINC))
 				{
 					((CtStatement) element).insertBefore(snippetUnOperParsed);
 				}
-				newLocalVarImpl = newLocalVarImpl.replace(uo.toString(), uo.getOperand().toString());
+				newLocalVarImpl = newLocalVarImpl.replace(unaryOperator.toString(),
+						unaryOperator.getOperand().toString());
 			}
 
 			CtCodeSnippetStatement snippetLocalVarParsed = factory.Code().createCodeSnippetStatement(newLocalVarImpl);

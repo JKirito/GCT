@@ -23,7 +23,7 @@ public class UTGenerator
 	// private final String compiledClassFolder = "bin";
 	// private final String packetNameOutput = "tmp";
 	private String				_packetClass;
-	private TestClass			_testClass;
+	private TestGenerator			_testClass;
 
 	public UTGenerator(SpoonedClass spoonedClass, Set<MethodToSelect> methods)
 	{
@@ -34,9 +34,9 @@ public class UTGenerator
 
 	public String generarCasos(int k) throws IOException
 	{
-		_testClass = new TestClass(_spoonedClass.getSpoonedClass().getSimpleName(), this._packetClass);
-		CtClass<?> ctClass = _spoonedClass.getSpoonedClass();
-
+		_testClass = new TestGenerator(_spoonedClass.getSpoonedClass().getSimpleName(), this._packetClass);
+		// CtClass<?> ctClassToInstrument = _spoonedClass.getSpoonedClass();
+		CtClass<?> ctInstrumentedClass = null;
 		// XXXXXXX: Primero instrumento los métodos seleccionados
 		for (MethodToSelect M : this._methods)
 		{
@@ -53,6 +53,7 @@ public class UTGenerator
 
 				Instrumentator instrumentator = new Instrumentator(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
 				instrumentator.instrumentMethod(actualMethod.getSimpleName(), typeReferences);
+				ctInstrumentedClass = instrumentator.getInstrumentedClass();
 			} catch (Exception e)
 			{
 				// TODO Auto-generated catch block
@@ -60,17 +61,16 @@ public class UTGenerator
 			}
 		}
 
-		// XXXXXXX: Guardo la clase instrumentada, la compilo y la cargo
-		storeClass(ctClass, Parameters.TMP_PATH_JAVA_INSTRUMENTED_CLASS);
+		// XXXXXXX: Guardo la clase instrumentada
+		storeClass(ctInstrumentedClass, Parameters.TMP_PATH_JAVA_INSTRUMENTED_CLASS);
 
+		// XXXXXXX: Compilo la clase instrumentada y la cargo
 		Class<?> classInstrumented = null;
 		try
 		{
-			// System.out.println("package " + packetNameOutput + ";\n" +
-			// ctClass.toString());
-			// TODO tmp... antes de compilar borro .class si está generado
-			String qualifiedClassName = Parameters.getPackageInstrumented() + "." + ctClass.getSimpleName();
-			String sourceClass = "package " + Parameters.getPackageInstrumented() + ";\n" + ctClass.toString();
+			String qualifiedClassName = Parameters.getPackageInstrumented() + "." + ctInstrumentedClass.getSimpleName();
+			String sourceClass = "package " + Parameters.getPackageInstrumented() + ";\n"
+					+ ctInstrumentedClass.toString();
 			classInstrumented = CompilerTool.CompileAndGetClass(qualifiedClassName, sourceClass,
 					Parameters.TMP_PATH_COMPILED_CLASS);
 		} catch (ClassNotFoundException e)
@@ -115,6 +115,11 @@ public class UTGenerator
 				_testClass.addMethodTest(M.getCtMethod().getSimpleName(), inputs);
 			}
 		}
+
+		// Borro las carpeta y clases que creé en el preprocesamiento e
+		// instrumentación
+		// new File(Parameters.TMP_PATH).delete();
+
 		// XXXXXX: Devuelvo el String con la clase que contiene los casos de
 		// test
 		return _testClass.getGenerateTestClass();
@@ -125,10 +130,19 @@ public class UTGenerator
 		Instrumentator instrumentator = new Instrumentator(javaFilePath);
 
 		List<CtTypeReference<?>> typeReferences = SpoonUtils.getTypeReferences(actualMethod);
+
+		if (instrumentator.preProcess(actualMethod.getSimpleName(), typeReferences, k))
+		{
+			storeClass(instrumentator.getInstrumentedClass(), Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
+			System.out.println("!se guarda una vez!!!!!!");
+			instrumentPreProcess(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS, actualMethod, k);
+			return;
+		}
+
 		if (instrumentator.preProcessLoop(actualMethod.getSimpleName(), typeReferences, k))
 		{
 			storeClass(instrumentator.getInstrumentedClass(), Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
-
+			System.out.println("!se guarda una vez!!!!!!");
 			instrumentPreProcess(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS, actualMethod, k);
 			return;
 		}

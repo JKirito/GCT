@@ -59,7 +59,8 @@ public class InstrumentedMethod
 			// negarYMarcarUltimaCondicion(conditionsSymb);
 			// }
 			Z3Solver z3 = new Z3Solver();
-			System.out.println("Condiciones a satisfacer: " + conditionsSymb);
+			// System.out.println("Condiciones a satisfacer: " +
+			// conditionsSymb);
 			Map<String, Integer> mapValues = z3.getSatisfiableValues(conditionsSymb);
 
 			// si z3 encontro valores, corro con esos valores

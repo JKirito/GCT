@@ -2,18 +2,21 @@ package test;
 
 
 public class Ejemplo {
-    public void method(int x, int y) {
-        y = x;
-        while (x < 3) {
+    public void method(int x) {
+        int a = x--;
+        while (x < 2) {
             x = x + 1;
-            int i = 0;
-            int c = 3;
-            while ((i + c) < 5) {
-                i = i + 1;
-                c = i - 1;
+            int i = x;
+            while (i < 5) {
+                i++;
             }
-            java.lang.System.out.println(("x = " + x));
         }
+    }
+
+    public void m2(int x) {
+        do {
+            java.lang.System.out.println("hola!!!");
+        } while (x < 19 );
     }
 }
 

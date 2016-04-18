@@ -8,9 +8,11 @@ public class Parameters
 	/*
 	 * Estos path tienen que ser una sola carpeta!
 	 */
-	public final static String	TMP_PATH_JAVA_PREPROCESS_CLASS		= "tmp" + File.separator + "preprocess";
-	public final static String	TMP_PATH_JAVA_INSTRUMENTED_CLASS	= "tmp" + File.separator + "instrument";
-	public final static String	TMP_PATH_COMPILED_CLASS				= "bin";
+
+	public static final String	TMP_PATH							= "tmp";
+	public final static String	TMP_PATH_JAVA_PREPROCESS_CLASS		= TMP_PATH + File.separator + "preprocess";
+	public final static String	TMP_PATH_JAVA_INSTRUMENTED_CLASS	= TMP_PATH + File.separator + "instrument";
+	public final static String	TMP_PATH_COMPILED_CLASS				= TMP_PATH + File.separator + "bin";
 
 	public final static String getPackagePreProcess()
 	{

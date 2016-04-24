@@ -13,6 +13,7 @@ public class Parameters
 	public final static String	TMP_PATH_JAVA_PREPROCESS_CLASS		= TMP_PATH + File.separator + "preprocess";
 	public final static String	TMP_PATH_JAVA_INSTRUMENTED_CLASS	= TMP_PATH + File.separator + "instrument";
 	public final static String	TMP_PATH_COMPILED_CLASS				= TMP_PATH + File.separator + "bin";
+	public final static String	JAVA_EXTENSION						= ".java";
 
 	public final static String getPackagePreProcess()
 	{
@@ -24,7 +25,7 @@ public class Parameters
 		return getPackage(TMP_PATH_JAVA_INSTRUMENTED_CLASS);
 	}
 
-	public static String getPackage(String path)
+	private static String getPackage(String path)
 	{
 		String packageName = path;
 		if (path.contains(File.separator))

@@ -1,5 +1,6 @@
 package model;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
@@ -11,6 +12,7 @@ import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.reference.CtTypeReference;
 import utils.SpoonUtils;
 import utils.StoreFile;
+import utils.Utils;
 
 public class UTGenerator
 {
@@ -18,26 +20,35 @@ public class UTGenerator
 	// Program analysis and transformation in java.
 	// Technical Report 5901, INRIA, 2006.
 
-	private SpoonedClass		_spoonedClass;
 	private Set<MethodToSelect>	_methods;
-	// private final String compiledClassFolder = "bin";
-	// private final String packetNameOutput = "tmp";
+	private String				_javaFilePath;
 	private String				_packetClass;
-	private TestGenerator			_testClass;
+	private TestGenerator		_testClass;
 
-	public UTGenerator(SpoonedClass spoonedClass, Set<MethodToSelect> methods)
+	public UTGenerator(String javaFilePath, Set<MethodToSelect> methods)
 	{
-		this._spoonedClass = spoonedClass;
-		this._packetClass = this._spoonedClass.getSpoonedClass().getPackage().getSimpleName();
-		this._methods = methods;
+		_javaFilePath = javaFilePath;
+		_packetClass = Utils.getPackageName(_javaFilePath);
+		_methods = methods;
+		// Copio el archivo java a un directorio temporal
+		try
+		{
+			StoreFile.copyFile(javaFilePath,
+					Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS + File.separator + new File(javaFilePath).getName());
+		} catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
-	public String generarCasos(int k) throws IOException
+	public String generarCasos(int k) throws Exception
 	{
-		_testClass = new TestGenerator(_spoonedClass.getSpoonedClass().getSimpleName(), this._packetClass);
-		// CtClass<?> ctClassToInstrument = _spoonedClass.getSpoonedClass();
+		_testClass = new TestGenerator(Utils.getSimpleJavaFileName(_javaFilePath), this._packetClass);
 		CtClass<?> ctInstrumentedClass = null;
-		// XXXXXXX: Primero instrumento los métodos seleccionados
+
+		// XXXXXXX: Primero hago un preprocesamiento de cada método
 		for (MethodToSelect M : this._methods)
 		{
 			if (!M.isSelected())
@@ -47,19 +58,28 @@ public class UTGenerator
 
 			try
 			{
-				instrumentPreProcess(_spoonedClass.getPathJavaFile(), actualMethod, k);
-
-				List<CtTypeReference<?>> typeReferences = SpoonUtils.getTypeReferences(actualMethod);
-
-				Instrumentator instrumentator = new Instrumentator(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
-				instrumentator.instrumentMethod(actualMethod.getSimpleName(), typeReferences);
-				ctInstrumentedClass = instrumentator.getInstrumentedClass();
+				instrumentPreProcess(actualMethod, k);
 			} catch (Exception e)
 			{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+
+		// XXXXXXX: Después instrumento los métodos a partir del
+		// preprocesamiento anterior
+		Instrumentator instrumentator = new Instrumentator(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
+		for (MethodToSelect M : this._methods)
+		{
+			if (!M.isSelected())
+				continue;
+
+			CtMethod<?> actualMethod = M.getCtMethod();
+
+			List<CtTypeReference<?>> typeReferences = SpoonUtils.getTypeReferences(actualMethod);
+			instrumentator.instrumentMethod(actualMethod.getSimpleName(), typeReferences);
+		}
+		ctInstrumentedClass = instrumentator.getInstrumentedClass();
 
 		// XXXXXXX: Guardo la clase instrumentada
 		storeClass(ctInstrumentedClass, Parameters.TMP_PATH_JAVA_INSTRUMENTED_CLASS);
@@ -85,14 +105,15 @@ public class UTGenerator
 
 		// XXXXXX: Ejecuto cada método instrumentado y guardo los valores
 		// obtenidos por el solver
+		InstrumentedMethod instrumentedMethod = new InstrumentedMethod(classInstrumented);
 		for (MethodToSelect M : this._methods)
 		{
 			if (!M.isSelected())
 				continue;
+
 			CtMethod<?> actualMethod = M.getCtMethod();
 
 			// XXXXXX: Obtengo los valores para testear el método
-			InstrumentedMethod instrumentedMethod = new InstrumentedMethod(classInstrumented);
 			List<List<Integer>> inputsGenerated = null;
 			try
 			{
@@ -100,7 +121,6 @@ public class UTGenerator
 				for (int i = 0; i < actualMethod.getParameters().size(); i++)
 				{
 					parameterTypes[i] = actualMethod.getParameters().get(i).getType().getActualClass();
-					// System.out.println(parameterTypes[i]);
 				}
 				inputsGenerated = instrumentedMethod.generateInputs(actualMethod.getSimpleName(), parameterTypes);
 			} catch (Exception e)
@@ -125,25 +145,23 @@ public class UTGenerator
 		return _testClass.getGenerateTestClass();
 	}
 
-	private void instrumentPreProcess(String javaFilePath, CtMethod<?> actualMethod, int k) throws Exception
+	private void instrumentPreProcess(CtMethod<?> actualMethod, int k) throws Exception
 	{
-		Instrumentator instrumentator = new Instrumentator(javaFilePath);
+		Instrumentator instrumentator = new Instrumentator(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
 
 		List<CtTypeReference<?>> typeReferences = SpoonUtils.getTypeReferences(actualMethod);
 
 		if (instrumentator.preProcess(actualMethod.getSimpleName(), typeReferences, k))
 		{
 			storeClass(instrumentator.getInstrumentedClass(), Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
-			System.out.println("!se guarda una vez!!!!!!");
-			instrumentPreProcess(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS, actualMethod, k);
+			instrumentPreProcess(actualMethod, k);
 			return;
 		}
 
 		if (instrumentator.preProcessLoop(actualMethod.getSimpleName(), typeReferences, k))
 		{
 			storeClass(instrumentator.getInstrumentedClass(), Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
-			System.out.println("!se guarda una vez!!!!!!");
-			instrumentPreProcess(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS, actualMethod, k);
+			instrumentPreProcess(actualMethod, k);
 			return;
 		}
 
@@ -158,8 +176,9 @@ public class UTGenerator
 	{
 		String className = ctClas.getSimpleName();
 
-		String Stringclass = "package " + Parameters.getPackage(pathToSave) + ";\n" + ctClas.toString();
-		StoreFile sf = new StoreFile(pathToSave + "/", ".java", Stringclass, className, "utf-8");
+		String Stringclass = "package " + Utils.getPackageName(pathToSave) + ";\n" + ctClas.toString();
+		StoreFile sf = new StoreFile(pathToSave + "/", Parameters.JAVA_EXTENSION, Stringclass, className,
+				StoreFile.CHARSET_UTF8);
 		sf.store();
 	}
 

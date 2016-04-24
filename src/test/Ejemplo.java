@@ -3,12 +3,11 @@ package test;
 public class Ejemplo
 {
 
-	public void method(int x)
+	public void m0(int x)
 	{
-		int a = x--;
 		while (x < 2)
 		{
-			x = x + 1;
+			x++;
 			int i = x;
 			while (i < 5)
 			{
@@ -18,23 +17,38 @@ public class Ejemplo
 
 	}
 
+	public void m1(int x, int y)
+	{
+		if (x > 2)
+		{
+			y = x + 1;
+		} else
+		{
+			y = y + 1;
+		}
+
+		if (x <= 2)
+		{
+			y = y + 1;
+		} else
+		{
+			x = x + 2;
+		}
+
+	}
+
 	public void m2(int x)
 	{
-		// for (int i = 0; i < 5; i++)
-		// {
-		// System.out.println("va por el i=" + i);
-		// }
-		// System.out.println("/////////////");
-		// List<Integer> list = new ArrayList<>();
-		// for (Integer a : list)
-		// {
-		// System.out.println("UUUU");
-		// }
-
-		do
+		if (x < 3)
 		{
-			System.out.println("hola!!!");
-		} while (x < 19);
+			if (x < 2)
+			{
+				if (x < 1)
+				{
+					;
+				}
+			}
+		}
 	}
 
 }

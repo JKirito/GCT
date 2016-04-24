@@ -80,7 +80,7 @@ public class SpoonedClass
 		return this._ctClass.getSimpleName();
 	}
 
-	public String getPathJavaFile()
+	public String getJavaFilePath()
 	{
 		return _pathJavaFile;
 	}

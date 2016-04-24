@@ -6,6 +6,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class StoreFile
 {
@@ -50,6 +55,19 @@ public class StoreFile
 		if (this.nombreArchivo.endsWith(this.extension))
 			this.nombreArchivo = this.nombreArchivo.substring(0,
 					(this.nombreArchivo.length() - this.extension.length()));
+	}
+
+	public static void copyFile(String origenPath, String destinoPath) throws IOException
+	{
+		Path FROM = Paths.get(origenPath);
+		Path TO = Paths.get(destinoPath);
+		// sobreescribir el fichero de destino, si existe, y copiar
+		// los atributos, incluyendo los permisos rwx
+		CopyOption[] options = new CopyOption[] { StandardCopyOption.REPLACE_EXISTING,
+				StandardCopyOption.COPY_ATTRIBUTES };
+		// Por si no existe el path completo
+		new File(destinoPath).mkdirs();
+		Files.copy(FROM, TO, options);
 	}
 
 	public void store() throws IOException

@@ -61,7 +61,9 @@ public class Instrumentator
 	{
 		// si ya se agregaron las variables, no vuelvo a agregarlas
 		if (_instrumentedClass.getField(SYMB_CONDITIONS_LINKEDHASHSET_VARNAME) != null)
+		{
 			return;
+		}
 
 		// Agrego atributo List<symbCondition> a la clase
 		CtType<Set<SymbCondition>> typeSet = _factory.Class()
@@ -83,11 +85,8 @@ public class Instrumentator
 	}
 
 	/**
-	 * Instrumenta el método recibido por parámetro. También agrega atributos a
-	 * la clase del método.
+	 * Instrumenta el método recibido por parámetro.
 	 * 
-	 * @param k
-	 *            cantidad de veces que ejecuto un ciclo
 	 * @throws ParseException
 	 * @throws NoSuchMethodException
 	 *             En caso de no encontrar el método en la clase a instrumentar
@@ -430,7 +429,6 @@ public class Instrumentator
 				assignment = concreteAssignment.getAssignment().toString();
 			} catch (Exception e)
 			{
-				System.err.println("NO SE ACEPTA LA ENTRADA '" + concreteAssignment.toString() + "'");
 				e.printStackTrace();
 				System.exit(1);
 			}

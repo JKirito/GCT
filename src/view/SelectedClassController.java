@@ -23,6 +23,7 @@ import javafx.util.Callback;
 import model.MethodToSelect;
 import model.SpoonedClass;
 import model.UTGenerator;
+import parameters.Parameters;
 import spoon.reflect.declaration.CtMethod;
 import utils.StoreFile;
 
@@ -47,7 +48,6 @@ public class SelectedClassController
 	private SpoonedClass				spoonedClass;
 	private String						_filePathJava;
 	private ExtensionFilter				javaFilter;
-	private final static String			javaExtension	= ".java";
 
 	/**
 	 * The constructor. The constructor is called before the initialize()
@@ -66,7 +66,7 @@ public class SelectedClassController
 	{
 		this._paneLoadClass.setDisable(true);
 		List<String> extensions = new ArrayList<String>();
-		extensions.add("*" + javaExtension);
+		extensions.add("*" + Parameters.JAVA_EXTENSION);
 		javaFilter = new ExtensionFilter("java files(.java)", extensions);
 
 		_chkListMethods
@@ -144,17 +144,16 @@ public class SelectedClassController
 			k = Integer.parseInt(_txtCiclo.getText());
 		} catch (Exception e)
 		{
-			// TODO: handle exception
 		}
 
-		if (_txtCiclo.getText().isEmpty() || k == null)
+		if (k == null || _txtCiclo.getText().isEmpty())
 		{
 			ViewUtils.alertWarning("Operación no permitida",
 					"Debe ingresar un número en el campo \"Profundidad\" ciclos");
 			return;
 		}
 
-		UTGenerator generator = new UTGenerator(spoonedClass, selectedMethods);
+		UTGenerator generator = new UTGenerator(spoonedClass.getJavaFilePath(), selectedMethods);
 		String testClass = null;
 		try
 		{
@@ -166,11 +165,15 @@ public class SelectedClassController
 			ViewUtils.alertException("Error al guardar un archivo!", e1);
 			this._paneLoadClass.setDisable(true);
 			return;
+		} catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		String classToTestName = spoonedClass.getSpoonedClassName();
-		String pathToSave = this._filePathJava.replace(classToTestName + javaExtension, "");
-		StoreFile sf = new StoreFile(pathToSave, javaExtension, testClass, classToTestName + "Test",
+		String pathToSave = this._filePathJava.replace(classToTestName + Parameters.JAVA_EXTENSION, "");
+		StoreFile sf = new StoreFile(pathToSave, Parameters.JAVA_EXTENSION, testClass, classToTestName + "Test",
 				StoreFile.CHARSET_UTF8);
 		try
 		{

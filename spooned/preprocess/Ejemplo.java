@@ -2,54 +2,28 @@ package preprocess;
 
 
 public class Ejemplo {
-    public void m0(int x) {
+    public java.lang.Integer m0(int x) {
         if (x < 2) {
             x = x + 1;
             int i_xeditx_1 = x;
             if (i_xeditx_1 < 5) {
                 i_xeditx_1 = i_xeditx_1 + 1;
                 if (i_xeditx_1 < 5) {
-                    {
-                        i_xeditx_1 = i_xeditx_1 + 1;
-                    }
-                    if (i_xeditx_1 < 5) {
-                        i_xeditx_1 = i_xeditx_1 + 1;
-                    } 
+                    i_xeditx_1 = i_xeditx_1 + 1;
                 } 
             } 
             if (x < 2) {
-                {
-                    x = x + 1;
-                    int i_xeditx_2 = x;
+                x = x + 1;
+                int i_xeditx_2 = x;
+                if (i_xeditx_2 < 5) {
+                    i_xeditx_2 = i_xeditx_2 + 1;
                     if (i_xeditx_2 < 5) {
                         i_xeditx_2 = i_xeditx_2 + 1;
-                        if (i_xeditx_2 < 5) {
-                            {
-                                i_xeditx_2 = i_xeditx_2 + 1;
-                            }
-                            if (i_xeditx_2 < 5) {
-                                i_xeditx_2 = i_xeditx_2 + 1;
-                            } 
-                        } 
-                    } 
-                }
-                if (x < 2) {
-                    x = x + 1;
-                    int i_xeditx_3 = x;
-                    if (i_xeditx_3 < 5) {
-                        i_xeditx_3 = i_xeditx_3 + 1;
-                        if (i_xeditx_3 < 5) {
-                            {
-                                i_xeditx_3 = i_xeditx_3 + 1;
-                            }
-                            if (i_xeditx_3 < 5) {
-                                i_xeditx_3 = i_xeditx_3 + 1;
-                            } 
-                        } 
                     } 
                 } 
             } 
         } 
+        return 0;
     }
 
     public void m1(int x, int y) {
@@ -58,20 +32,39 @@ public class Ejemplo {
         } else {
             y = y + 1;
         }
-        if (x <= 2) {
-            y = y + 1;
-        } else {
-            x = x + 2;
+        for (int i = 0 ; i < 10 ; i++) {
+            if (x <= 2) {
+                y = y + 1;
+            } else {
+                x = x + 2;
+            }
         }
     }
 
     public void m2(int x) {
-        if (x < 3) {
-            if (x < 2) {
-                if (x < 1) {
-                } 
+        if (x < 5) {
+            if (x < 3) {
+                do {
+                    x--;
+                    for (int i = 0 ; i <= x ; i++) {
+                    }
+                } while (x > 0 );
             } 
         } 
+    }
+
+    public java.lang.Integer getMax(int x, int y, int z) {
+        java.lang.Integer max = java.lang.Integer.MIN_VALUE;
+        if ((x > y) && (x > z))
+            max = x;
+        else if ((y > x) && (y > z))
+            max = y;
+        else if ((z > y) && (z > x))
+            max = z;
+        else
+            return x;
+        
+        return max;
     }
 
     public java.util.LinkedHashSet<model.SymbCondition> _conditions = new java.util.LinkedHashSet<model.SymbCondition>();

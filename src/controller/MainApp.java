@@ -22,7 +22,6 @@ public class MainApp extends Application
 		this.primaryStage.setTitle("Generador de casos de Tests Unitarios");
 
 		initRootLayout();
-
 	}
 
 	/**

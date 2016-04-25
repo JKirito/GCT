@@ -16,6 +16,8 @@ public class ConcolicMain
 
 	public static void main(String[] args) throws Exception
 	{
+		System.out.println("Starting...");
+		System.out.println();
 		String pathName = "/media/javi/DATOS/workspace/Eclipse/TPs_UNGS/GCT/src/test/Ejemplo.java";
 		SpoonedClass spoonedClass = new SpoonedClass(pathName);
 		try
@@ -31,11 +33,13 @@ public class ConcolicMain
 		for (CtMethod<?> M : spoonedClass.getAllMethods())
 		{
 			MethodToSelect m = new MethodToSelect(M);
+			// if (M.getSimpleName().equals("getMax"))
 			m.setSelected(true);
 			methods.add(m);
 		}
 
-		UTGenerator generator = new UTGenerator(spoonedClass.getJavaFilePath(), methods);
+		UTGenerator generator = new UTGenerator(spoonedClass.getJavaFilePath(), methods,
+				UTGenerator.TEMP_FILES.MANTENER);
 		String testClass = null;
 		int k = 2;
 		try

@@ -1,4 +1,4 @@
-package model;
+package instrument;
 
 import spoon.reflect.visitor.filter.TypeFilter;
 import spoon.support.reflect.code.CtOperatorAssignmentImpl;

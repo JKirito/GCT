@@ -1,4 +1,4 @@
-package model;
+package instrument;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -7,6 +7,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import model.SymbCondition;
+import model.Z3Solver;
 
 public class InstrumentedMethod
 {
@@ -59,8 +62,7 @@ public class InstrumentedMethod
 			// negarYMarcarUltimaCondicion(conditionsSymb);
 			// }
 			Z3Solver z3 = new Z3Solver();
-			// System.out.println("Condiciones a satisfacer: " +
-			// conditionsSymb);
+			System.out.println("Condiciones a satisfacer: " + conditionsSymb);
 			Map<String, Integer> mapValues = z3.getSatisfiableValues(conditionsSymb);
 
 			// si z3 encontro valores, corro con esos valores
@@ -86,7 +88,7 @@ public class InstrumentedMethod
 				methodCall.invoke(clazz, intParams);
 			}
 			deleteUsedConditions(conditionsSymb);
-			// System.out.println("conditions processed: " + conditionsSymb);
+			System.out.println("conditions processed: " + conditionsSymb);
 		}
 
 		// conditionsSymb = null;

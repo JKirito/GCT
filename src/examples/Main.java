@@ -1,6 +1,6 @@
 package examples;
 
-import model.Instrumentator;
+import instrument.Instrumentator;
 
 public class Main
 {

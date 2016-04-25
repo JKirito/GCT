@@ -1,4 +1,4 @@
-package model;
+package instrument;
 
 import spoon.reflect.code.CtCodeSnippetStatement;
 import spoon.reflect.code.CtExpression;
@@ -44,7 +44,7 @@ public class UnaryOperatorsUtils
 				break;
 
 			default:
-				break;
+				return unaryOperator.toString();
 		}
 
 		return var + " = " + var + " " + operator + " " + 1;

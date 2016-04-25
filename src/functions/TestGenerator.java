@@ -1,4 +1,4 @@
-package model;
+package functions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +57,7 @@ public class TestGenerator
 		return this._stringClassTest.toString();
 	}
 
-	public void addMethodTest(String methodName, List<Integer> parameters)
+	public void addMethodTest(String methodName, String returnType, List<Integer> parameters)
 	{
 		addCounterMethod(methodName);
 		StringBuilder method = new StringBuilder();
@@ -72,8 +72,18 @@ public class TestGenerator
 		}
 		// Saco los últimos caracteres (para sacar la ", ")
 		params = params.substring(0, params.length() - 2);
-		method.append("\t\t" + varName + "." + methodName + "(" + params + ");\n");
-		// method.append("assertEquals(" + + ", " + + ")")
+		String methodCall = varName + "." + methodName + "(" + params + ")";
+
+		if (!returnType.equals("void"))
+		{
+			String returnVarName = "ret";
+			method.append("\t\t" + returnType + " " + returnVarName + " = " + methodCall + ";\n");
+			method.append("\t\tassertEquals(" + returnVarName + ", " + methodCall + ");\n");
+		} else
+		{
+			method.append("\t\t" + varName + "." + methodName + "(" + params + ");\n");
+		}
+
 		method.append("\t}");
 		this._methods.add(method);
 	}

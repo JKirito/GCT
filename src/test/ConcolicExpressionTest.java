@@ -8,9 +8,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.singularsys.jep.Jep;
 import com.singularsys.jep.ParseException;
-import com.singularsys.jep.parser.Node;
 
 import model.ConcolicExpression;
 
@@ -178,28 +176,6 @@ public class ConcolicExpressionTest
 	public void getSymbolicExpressionVarComplex() throws ParseException
 	{
 		assertEquals("((5)-((y0)/(2)))-(7)", concreteExp.getSymbolicExpression("5-y/2-7", symbolicMap));
-	}
-
-	@Test
-	public void holaEstoEsUnTest() throws ParseException
-	{
-		Jep j = new Jep();
-		Node nodeExample = j.parse("7+1*7-2");
-		System.out.println(nodeExample.getOperator().getSymbol());
-		System.out.println(nodeExample.jjtGetChild(0));
-		// assertEquals("((5)-((y0)/(2)))-(7)",
-		// concreteExp.getSymbolicExpression(symbolicMap));
-	}
-
-	@Test
-	public void testXXX() throws ParseException
-	{
-		Jep j = new Jep();
-		Node nodeExample = j.parse("!((((2)*((x0)+(1)))+(y0))!=(y0))");
-		System.out.println(nodeExample.getOperator().getSymbol());
-		System.out.println(nodeExample.jjtGetChild(0));
-		// assertEquals("((5)-((y0)/(2)))-(7)",
-		// concreteExp.getSymbolicExpression(symbolicMap));
 	}
 
 }

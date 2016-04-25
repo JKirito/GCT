@@ -6,6 +6,10 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
 
+import functions.CompilerTool;
+import functions.TestGenerator;
+import instrument.Instrumentator;
+import instrument.InstrumentedMethod;
 import parameters.Parameters;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtMethod;
@@ -25,9 +29,17 @@ public class UTGenerator
 	private String				_packetClass;
 	private TestGenerator		_testClass;
 
-	public UTGenerator(String javaFilePath, Set<MethodToSelect> methods)
+	public enum TEMP_FILES
+	{
+		BORRAR, MANTENER
+	};
+
+	private TEMP_FILES _borrarTemporales;
+
+	public UTGenerator(String javaFilePath, Set<MethodToSelect> methods, TEMP_FILES option)
 	{
 		_javaFilePath = javaFilePath;
+		_borrarTemporales = option;
 		_packetClass = Utils.getPackageName(_javaFilePath);
 		_methods = methods;
 		// Copio el archivo java a un directorio temporal
@@ -48,6 +60,7 @@ public class UTGenerator
 		_testClass = new TestGenerator(Utils.getSimpleJavaFileName(_javaFilePath), this._packetClass);
 		CtClass<?> ctInstrumentedClass = null;
 
+		System.out.println("Preprocesando...");
 		// XXXXXXX: Primero hago un preprocesamiento de cada método
 		for (MethodToSelect M : this._methods)
 		{
@@ -66,6 +79,7 @@ public class UTGenerator
 			}
 		}
 
+		System.out.println("Instrumentando...");
 		// XXXXXXX: Después instrumento los métodos a partir del
 		// preprocesamiento anterior
 		Instrumentator instrumentator = new Instrumentator(Parameters.TMP_PATH_JAVA_PREPROCESS_CLASS);
@@ -103,6 +117,7 @@ public class UTGenerator
 			e.printStackTrace();
 		}
 
+		System.out.println("Generando casos...");
 		// XXXXXX: Ejecuto cada método instrumentado y guardo los valores
 		// obtenidos por el solver
 		InstrumentedMethod instrumentedMethod = new InstrumentedMethod(classInstrumented);
@@ -132,13 +147,17 @@ public class UTGenerator
 			// XXXXXX: creo los casos de test para los inputs generados
 			for (List<Integer> inputs : inputsGenerated)
 			{
-				_testClass.addMethodTest(M.getCtMethod().getSimpleName(), inputs);
+				_testClass.addMethodTest(M.getCtMethod().getSimpleName(), M.getCtMethod().getType().getSimpleName(),
+						inputs);
 			}
 		}
 
 		// Borro las carpeta y clases que creé en el preprocesamiento e
 		// instrumentación
-		// new File(Parameters.TMP_PATH).delete();
+		if (_borrarTemporales.compareTo(TEMP_FILES.BORRAR) == 0)
+		{
+			Utils.delete(new File(Parameters.TMP_PATH));
+		}
 
 		// XXXXXX: Devuelvo el String con la clase que contiene los casos de
 		// test

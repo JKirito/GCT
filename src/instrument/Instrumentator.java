@@ -1,4 +1,4 @@
-package model;
+package instrument;
 
 import java.util.List;
 import java.util.Set;
@@ -6,12 +6,15 @@ import java.util.Set;
 import com.singularsys.jep.ParseException;
 
 import functions.RenameVar;
+import model.SpoonedClass;
+import model.SymbCondition;
 import spoon.reflect.code.CtAssignment;
 import spoon.reflect.code.CtCodeSnippetExpression;
 import spoon.reflect.code.CtCodeSnippetStatement;
 import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtIf;
 import spoon.reflect.code.CtStatement;
+import spoon.reflect.code.CtWhile;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtField;
 import spoon.reflect.declaration.CtMethod;
@@ -22,6 +25,8 @@ import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtLocalVariableReference;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
+import spoon.support.reflect.code.CtDoImpl;
+import spoon.support.reflect.code.CtForImpl;
 import spoon.support.reflect.code.CtLocalVariableImpl;
 import spoon.support.reflect.code.CtOperatorAssignmentImpl;
 import spoon.support.reflect.code.CtUnaryOperatorImpl;
@@ -196,6 +201,11 @@ public class Instrumentator
 		for (CtUnaryOperatorImpl<?> unOperatorSt : unaryOperatorsStatements)
 		{
 			String unaryOpParsed = unaryOperatorUtils.getStringParsedUnaryOperator(unOperatorSt);
+			// Si no cambio, que continue. Puede ser un "-1" que debe quedar
+			// igual
+			if (unaryOpParsed.equals(unOperatorSt.toString()))
+				continue;
+
 			CtCodeSnippetStatement snippetUnOperParsed = _factory.Code().createCodeSnippetStatement(unaryOpParsed);
 			unOperatorSt.replace(snippetUnOperParsed);
 			change = true;
@@ -266,9 +276,8 @@ public class Instrumentator
 	{
 		CtMethod<?> instrumentedMethod = getCtMethod(methodName, typeReferences);
 
-		boolean forChanged = preProcessFor(instrumentedMethod);
-
-		return preProcessWhile(instrumentedMethod, k);
+		return preProcessFor(instrumentedMethod) || preProcessDoWhile(instrumentedMethod)
+				|| preProcessWhile(instrumentedMethod, k);
 	}
 
 	/**
@@ -287,8 +296,77 @@ public class Instrumentator
 	// CtForImpl
 	private boolean preProcessFor(CtMethod<?> instrumentedMethod)
 	{
-		// TODO Auto-generated method stub
-		return false;
+		TypeFilter<CtForImpl> filterFor = new TypeFilter<CtForImpl>(CtForImpl.class);
+		List<CtForImpl> fors = instrumentedMethod.getElements(filterFor);
+
+		boolean change = !fors.isEmpty();
+
+		if (change == false)
+			return change;
+
+		CtForImpl concreteFor = fors.get(0);
+
+		// XXXXX: Las declaraciones del for las agrego antes del for
+		List<CtStatement> forInitStatements = concreteFor.getForInit();
+		for (CtStatement s : forInitStatements)
+		{
+			concreteFor.insertBefore(s);
+		}
+
+		// XXXXX: Los update del for los agrego al final del cuerpo del for
+		List<CtStatement> forUpdateStatements = concreteFor.getForUpdate();
+		for (CtStatement s : forUpdateStatements)
+		{
+			concreteFor.getBody().insertAfter(s);
+		}
+		String forBody = concreteFor.getBody().toString();
+		CtCodeSnippetStatement snippetForBody = _factory.Code().createCodeSnippetStatement(forBody);
+
+		String forExpression = concreteFor.getExpression().toString();
+		CtCodeSnippetExpression<Boolean> snippetForExpression = _factory.Code()
+				.createCodeSnippetExpression(forExpression);
+
+		// XXXXX: Creo un while, le seteo la misma expression del for, su cuerpo
+		// y reemplazo el for por este while
+		CtWhile ctWhile = _factory.Core().createWhile();
+		ctWhile.setLoopingExpression(snippetForExpression);
+		ctWhile.setBody(snippetForBody);
+		concreteFor.replace(ctWhile);
+
+		return change;
+	}
+
+	/**
+	 * Reemplaza los do{S}while(condition) por un while<br/>
+	 * 
+	 * <b>S<br/>
+	 * while(condition){<br/>
+	 * S }<br/>
+	 * </b>
+	 * 
+	 * @param instrumentedMethod
+	 * @return true si encontró un do While para reemplazar
+	 */
+	private boolean preProcessDoWhile(CtMethod<?> instrumentedMethod)
+	{
+		TypeFilter<CtDoImpl> filterFor = new TypeFilter<CtDoImpl>(CtDoImpl.class);
+		List<CtDoImpl> doWhiles = instrumentedMethod.getElements(filterFor);
+
+		boolean change = !doWhiles.isEmpty();
+
+		if (change == false)
+			return change;
+
+		CtDoImpl concreteDoWhile = doWhiles.get(0);
+		concreteDoWhile.insertBefore(concreteDoWhile.getBody());
+
+		CtWhile ctWhile = _factory.Core().createWhile();
+		ctWhile.setBody(concreteDoWhile.getBody());
+		ctWhile.setLoopingExpression(concreteDoWhile.getLoopingExpression());
+
+		concreteDoWhile.replace(ctWhile);
+
+		return change;
 	}
 
 	private boolean preProcessWhile(CtMethod<?> instrumentedMethod, int k)

@@ -9,16 +9,43 @@ public class Ejemplo {
             if (i_xeditx_1 < 5) {
                 i_xeditx_1 = i_xeditx_1 + 1;
                 if (i_xeditx_1 < 5) {
-                    i_xeditx_1 = i_xeditx_1 + 1;
+                    {
+                        i_xeditx_1 = i_xeditx_1 + 1;
+                    }
+                    if (i_xeditx_1 < 5) {
+                        i_xeditx_1 = i_xeditx_1 + 1;
+                    } 
                 } 
             } 
             if (x < 2) {
-                x = x + 1;
-                int i_xeditx_2 = x;
-                if (i_xeditx_2 < 5) {
-                    i_xeditx_2 = i_xeditx_2 + 1;
+                {
+                    x = x + 1;
+                    int i_xeditx_2 = x;
                     if (i_xeditx_2 < 5) {
                         i_xeditx_2 = i_xeditx_2 + 1;
+                        if (i_xeditx_2 < 5) {
+                            {
+                                i_xeditx_2 = i_xeditx_2 + 1;
+                            }
+                            if (i_xeditx_2 < 5) {
+                                i_xeditx_2 = i_xeditx_2 + 1;
+                            } 
+                        } 
+                    } 
+                }
+                if (x < 2) {
+                    x = x + 1;
+                    int i_xeditx_3 = x;
+                    if (i_xeditx_3 < 5) {
+                        i_xeditx_3 = i_xeditx_3 + 1;
+                        if (i_xeditx_3 < 5) {
+                            {
+                                i_xeditx_3 = i_xeditx_3 + 1;
+                            }
+                            if (i_xeditx_3 < 5) {
+                                i_xeditx_3 = i_xeditx_3 + 1;
+                            } 
+                        } 
                     } 
                 } 
             } 
@@ -32,23 +59,100 @@ public class Ejemplo {
         } else {
             y = y + 1;
         }
-        for (int i = 0 ; i < 10 ; i++) {
+        int i = 0;
+        if (i < 10) {
             if (x <= 2) {
                 y = y + 1;
             } else {
                 x = x + 2;
             }
-        }
+            i = i + 1;
+            if (i < 10) {
+                {
+                    if (x <= 2) {
+                        y = y + 1;
+                    } else {
+                        x = x + 2;
+                    }
+                    i = i + 1;
+                }
+                if (i < 10) {
+                    if (x <= 2) {
+                        y = y + 1;
+                    } else {
+                        x = x + 2;
+                    }
+                    i = i + 1;
+                } 
+            } 
+        } 
     }
 
     public void m2(int x) {
         if (x < 5) {
             if (x < 3) {
-                do {
-                    x--;
-                    for (int i = 0 ; i <= x ; i++) {
-                    }
-                } while (x > 0 );
+                {
+                    x = x - 1;
+                    int i = 0;
+                    if (i <= x) {
+                        i = i + 1;
+                        if (i <= x) {
+                            {
+                                i = i + 1;
+                            }
+                            if (i <= x) {
+                                i = i + 1;
+                            } 
+                        } 
+                    } 
+                }
+                if (x > 0) {
+                    x = x - 1;
+                    int i_xeditx_1 = 0;
+                    if (i_xeditx_1 <= x) {
+                        i_xeditx_1 = i_xeditx_1 + 1;
+                        if (i_xeditx_1 <= x) {
+                            {
+                                i_xeditx_1 = i_xeditx_1 + 1;
+                            }
+                            if (i_xeditx_1 <= x) {
+                                i_xeditx_1 = i_xeditx_1 + 1;
+                            } 
+                        } 
+                    } 
+                    if (x > 0) {
+                        {
+                            x = x - 1;
+                            int i_xeditx_2 = 0;
+                            if (i_xeditx_2 <= x) {
+                                i_xeditx_2 = i_xeditx_2 + 1;
+                                if (i_xeditx_2 <= x) {
+                                    {
+                                        i_xeditx_2 = i_xeditx_2 + 1;
+                                    }
+                                    if (i_xeditx_2 <= x) {
+                                        i_xeditx_2 = i_xeditx_2 + 1;
+                                    } 
+                                } 
+                            } 
+                        }
+                        if (x > 0) {
+                            x = x - 1;
+                            int i_xeditx_3 = 0;
+                            if (i_xeditx_3 <= x) {
+                                i_xeditx_3 = i_xeditx_3 + 1;
+                                if (i_xeditx_3 <= x) {
+                                    {
+                                        i_xeditx_3 = i_xeditx_3 + 1;
+                                    }
+                                    if (i_xeditx_3 <= x) {
+                                        i_xeditx_3 = i_xeditx_3 + 1;
+                                    } 
+                                } 
+                            } 
+                        } 
+                    } 
+                } 
             } 
         } 
     }

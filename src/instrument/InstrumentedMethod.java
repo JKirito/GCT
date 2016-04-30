@@ -13,17 +13,17 @@ import model.Z3Solver;
 
 public class InstrumentedMethod
 {
-	private String				_conditionsFieldName	= "_conditions";
-	private String				_symbParamFieldName		= "_parameters";
-	private List<List<Integer>>	_inputs;
-	private Class<?>			_instrumentedClass;
+	private String			_conditionsFieldName	= "_conditions";
+	private String			_symbParamFieldName		= "_parameters";
+	private List<Object[]>	_inputs;
+	private Class<?>		_instrumentedClass;
 
 	public InstrumentedMethod(Class<?> clas)
 	{
 		this._instrumentedClass = clas;
 	}
 
-	public List<List<Integer>> generateInputs(String methodName, Class<?>... parameterTypes) throws Exception
+	public List<Object[]> generateInputs(String methodName, Class<?>... parameterTypes) throws Exception
 	{
 		this._inputs = new ArrayList<>();
 		Object clazz = _instrumentedClass.newInstance();
@@ -46,7 +46,7 @@ public class InstrumentedMethod
 		Field conditionsField = clazz.getClass().getDeclaredField(_conditionsFieldName);
 		@SuppressWarnings("unchecked")
 		Collection<SymbCondition> conditionsSymb = (Collection<SymbCondition>) conditionsField.get(clazz);
-		System.out.println("Condiciones: " + conditionsSymb);
+		// System.out.println("Condiciones: " + conditionsSymb);
 
 		Field symbParamField = clazz.getClass().getDeclaredField(_symbParamFieldName);
 		@SuppressWarnings("unchecked")
@@ -62,13 +62,14 @@ public class InstrumentedMethod
 			// negarYMarcarUltimaCondicion(conditionsSymb);
 			// }
 			Z3Solver z3 = new Z3Solver();
-			System.out.println("Condiciones a satisfacer: " + conditionsSymb);
+			// System.out.println("Condiciones a satisfacer: " +
+			// conditionsSymb);
 			Map<String, Integer> mapValues = z3.getSatisfiableValues(conditionsSymb);
 
 			// si z3 encontro valores, corro con esos valores
 			if (!mapValues.isEmpty())
 			{
-				System.out.println("mapValues: " + mapValues.toString());
+				// System.out.println("mapValues: " + mapValues.toString());
 				Object[] intParams = new Object[symbParams.size()];
 				int i = 0;
 				for (String param : symbParams)
@@ -88,7 +89,7 @@ public class InstrumentedMethod
 				methodCall.invoke(clazz, intParams);
 			}
 			deleteUsedConditions(conditionsSymb);
-			System.out.println("conditions processed: " + conditionsSymb);
+			// System.out.println("conditions processed: " + conditionsSymb);
 		}
 
 		// conditionsSymb = null;
@@ -131,12 +132,7 @@ public class InstrumentedMethod
 
 	private void addValuesToReturnList(Object... params)
 	{
-		List<Integer> values = new ArrayList<>();
-		for (int i = 0; i < params.length; i++)
-		{
-			values.add((Integer) params[i]);
-		}
-		this._inputs.add(values);
+		this._inputs.add(params);
 	}
 
 }

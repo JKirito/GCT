@@ -1,5 +1,6 @@
 package functions;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +58,7 @@ public class TestGenerator
 		return this._stringClassTest.toString();
 	}
 
-	public void addMethodTest(String methodName, String returnType, List<Integer> parameters)
+	public void addMethodTest(String methodName, String returnType, Object[] parameters, Class<?>[] parametersTypes)
 	{
 		addCounterMethod(methodName);
 		StringBuilder method = new StringBuilder();
@@ -66,7 +67,7 @@ public class TestGenerator
 		String varName = "var";
 		method.append("\t\t" + this._className + " " + varName + " = new " + this._className + "();\n");
 		String params = "";
-		for (Integer p : parameters)
+		for (Object p : parameters)
 		{
 			params += p + ", ";
 		}
@@ -78,10 +79,21 @@ public class TestGenerator
 		{
 			String returnVarName = "ret";
 			method.append("\t\t" + returnType + " " + returnVarName + " = " + methodCall + ";\n");
-			method.append("\t\tassertEquals(" + returnVarName + ", " + methodCall + ");\n");
+			Object ret = null;
+			try
+			{
+				ret = TestGenerator.execute(_packetClass + "." + _className, methodName, parameters, parametersTypes);
+			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
+					| ClassNotFoundException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			// FIXME cambiar!!!!!! sólo para tipos enteros ahora!!!
+			method.append("\t\tassertEquals(new Integer(" + ret + "), " + returnVarName + ");\n");
 		} else
 		{
-			method.append("\t\t" + varName + "." + methodName + "(" + params + ");\n");
+			method.append("\t\t" + methodCall + ";\n");
 		}
 
 		method.append("\t}");
@@ -102,6 +114,25 @@ public class TestGenerator
 			n += this._methodNum.get(method);
 		}
 		return n;
+	}
+
+	public static Object execute(String className, String methodName, Object[] parameters, Class<?>[] parametersTypes)
+			throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException,
+			ClassNotFoundException
+	{
+		Object clazz = Class.forName(className).newInstance();
+
+		Method methodCall = clazz.getClass().getMethod(methodName, parametersTypes);
+		Object ret = null;
+		try
+		{
+			ret = methodCall.invoke(clazz, parameters);
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		return ret;
 	}
 
 }

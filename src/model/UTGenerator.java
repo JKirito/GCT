@@ -129,14 +129,15 @@ public class UTGenerator
 			CtMethod<?> actualMethod = M.getCtMethod();
 
 			// XXXXXX: Obtengo los valores para testear el método
-			List<List<Integer>> inputsGenerated = null;
+			List<Object[]> inputsGenerated = null;
 			try
 			{
-				Class<?>[] parameterTypes = new Class<?>[actualMethod.getParameters().size()];
-				for (int i = 0; i < actualMethod.getParameters().size(); i++)
-				{
-					parameterTypes[i] = actualMethod.getParameters().get(i).getType().getActualClass();
-				}
+				Class<?>[] parameterTypes = SpoonUtils.getParametersTypes(actualMethod);
+				// for (int i = 0; i < actualMethod.getParameters().size(); i++)
+				// {
+				// parameterTypes[i] =
+				// actualMethod.getParameters().get(i).getType().getActualClass();
+				// }
 				inputsGenerated = instrumentedMethod.generateInputs(actualMethod.getSimpleName(), parameterTypes);
 			} catch (Exception e)
 			{
@@ -145,10 +146,10 @@ public class UTGenerator
 			}
 
 			// XXXXXX: creo los casos de test para los inputs generados
-			for (List<Integer> inputs : inputsGenerated)
+			for (Object[] inputs : inputsGenerated)
 			{
 				_testClass.addMethodTest(M.getCtMethod().getSimpleName(), M.getCtMethod().getType().getSimpleName(),
-						inputs);
+						inputs, SpoonUtils.getParametersTypes(M.getCtMethod()));
 			}
 		}
 

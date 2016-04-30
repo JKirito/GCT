@@ -20,4 +20,15 @@ public class SpoonUtils
 
 		return typeRefs;
 	}
+
+	public static Class<?>[] getParametersTypes(CtMethod<?> method)
+	{
+		Class<?>[] parametersTypes = new Class<?>[method.getParameters().size()];
+		for (int i = 0; i < method.getParameters().size(); i++)
+		{
+			parametersTypes[i] = method.getParameters().get(i).getType().getActualClass();
+		}
+
+		return parametersTypes;
+	}
 }

@@ -9,6 +9,7 @@ import com.microsoft.z3.BoolExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.FuncDecl;
+import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Solver;
 import com.singularsys.jep.Jep;
@@ -34,9 +35,6 @@ public class Z3Solver
 		{
 			BoolExpr boolExpr = this.getZ3BoolExpression(sc.getCondition());
 			solver.add(boolExpr);
-			// System.out.println();
-			// System.out.println(boolExpr.getSExpr());
-			// System.out.println();
 		}
 
 		switch (solver.check())
@@ -49,6 +47,7 @@ public class Z3Solver
 				;
 				// throw new IllegalArgumentException("No se pudo determinar la
 				// solución!!");
+				System.out.println("UNKNOWN solution!!! " + conditionsSymb.toString());
 				break;
 			case SATISFIABLE:
 				Model model = solver.getModel();
@@ -208,6 +207,15 @@ public class Z3Solver
 			ArithExpr leftExpr = (ArithExpr) makeZ3Expression(node.jjtGetChild(0));
 			ArithExpr rigthExpr = (ArithExpr) makeZ3Expression(node.jjtGetChild(1));
 			return _ctx.mkMul(leftExpr, rigthExpr);
+		}
+
+		// si es (exp1 % exp2) haces dos llamados recursivos exp1'=makeZ3(exp1)
+		// y exp2'=makeZ3(exp2) y devolvés ctx.mkMod(exp1', exp2')
+		else if (JEPUtils.isModOperator(node))
+		{
+			ArithExpr leftExpr = (ArithExpr) makeZ3Expression(node.jjtGetChild(0));
+			ArithExpr rigthExpr = (ArithExpr) makeZ3Expression(node.jjtGetChild(1));
+			return _ctx.mkMod((IntExpr) leftExpr, (IntExpr) rigthExpr);
 		}
 
 		// si es hoja y es numero crear y devolver una IntExpr

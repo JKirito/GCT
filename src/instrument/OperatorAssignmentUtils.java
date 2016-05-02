@@ -37,6 +37,9 @@ public class OperatorAssignmentUtils
 			case MINUS:
 				operator = "-";
 				break;
+			case MOD:
+				operator = "%";
+				break;
 			default:
 				break;
 		}

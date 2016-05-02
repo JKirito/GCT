@@ -20,6 +20,7 @@ public class JEPUtils
 	private final static String	SUB_OPERATOR		= "-";
 	private final static String	DIV_OPERATOR		= "/";
 	private final static String	MULT_OPERATOR		= "*";
+	private final static String	MOD_OPERATOR		= "%";
 
 	public static boolean isHoja(Node node)
 	{
@@ -116,6 +117,11 @@ public class JEPUtils
 	public static boolean isMultOperator(Node node)
 	{
 		return isOperator(node, MULT_OPERATOR);
+	}
+
+	public static boolean isModOperator(Node node)
+	{
+		return isOperator(node, MOD_OPERATOR);
 	}
 
 	private static boolean isOperator(Node node, String oper)

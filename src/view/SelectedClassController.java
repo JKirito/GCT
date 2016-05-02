@@ -154,7 +154,7 @@ public class SelectedClassController
 		}
 
 		UTGenerator generator = new UTGenerator(spoonedClass.getJavaFilePath(), selectedMethods,
-				UTGenerator.TEMP_FILES.MANTENER);
+				UTGenerator.TEMP_FILES.BORRAR);
 		String testClass = null;
 		try
 		{

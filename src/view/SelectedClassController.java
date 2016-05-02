@@ -146,10 +146,10 @@ public class SelectedClassController
 		{
 		}
 
-		if (k == null || _txtCiclo.getText().isEmpty())
+		if (k == null || _txtCiclo.getText().isEmpty() || _txtCiclo.getText().replaceAll("[0]*", "").isEmpty())
 		{
 			ViewUtils.alertWarning("Operación no permitida",
-					"Debe ingresar un número en el campo \"Profundidad\" ciclos");
+					"Debe ingresar un número mayor a cero en el campo \"Profundidad\" ciclos");
 			return;
 		}
 
@@ -170,6 +170,9 @@ public class SelectedClassController
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			ViewUtils.alertException("Error al generar los casos de test!", e);
+			this._paneLoadClass.setDisable(true);
+			return;
 		}
 
 		String classToTestName = spoonedClass.getSpoonedClassName();

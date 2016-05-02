@@ -3,18 +3,19 @@ package test;
 public class Ejemplo
 {
 
-	public Integer m0(int x)
+	public Integer m0(int x, int y)
 	{
-		while (x < 2)
+		while (x > 2 && y > 0)
 		{
-			x++;
-			int i = x;
+			x--;
+			int i = x + 1;
+			i %= 3;
 			while (i < 5)
 			{
 				i++;
 			}
 		}
-		return 0;
+		return x;
 	}
 
 	public void m1(int x, int y)

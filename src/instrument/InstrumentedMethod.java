@@ -86,6 +86,9 @@ public class InstrumentedMethod
 					i++;
 				}
 				addValuesToReturnList(intParams);
+				// TODO: podría guardar el resultado y usar esto para el generar
+				// tests, así no
+				// ejecuto de nuevo el método al generar los casos de test!
 				methodCall.invoke(clazz, intParams);
 			}
 			deleteUsedConditions(conditionsSymb);

@@ -198,10 +198,11 @@ public class Instrumentator
 		TypeFilter<CtUnaryOperatorImpl<?>> filterUnaryOperators = unaryOperatorUtils.getFilterUnaryOperator();
 		List<CtUnaryOperatorImpl<?>> unaryOperatorsStatements = instrumentedMethod.getElements(filterUnaryOperators);
 
+		// XXXXXXX: Reemplaza a++, ++a, a--, --a
 		for (CtUnaryOperatorImpl<?> unOperatorSt : unaryOperatorsStatements)
 		{
 			String unaryOpParsed = unaryOperatorUtils.getStringParsedUnaryOperator(unOperatorSt);
-			// Si no cambio, que continue. Puede ser un "-1" que debe quedar
+			// Si no cambió, que continue. Puede ser un "-1" que debe quedar
 			// igual
 			if (unaryOpParsed.equals(unOperatorSt.toString()))
 				continue;
@@ -211,6 +212,8 @@ public class Instrumentator
 			change = true;
 		}
 
+		// XXXXXXX: Modifico declaraciones locales. si posee "int a = b++ + x"
+		// lo reemplazo por dos sentencias: "int a = b + x" y "b = b + 1"
 		TypeFilter<CtLocalVariableImpl<?>> filterLocalVar = new TypeFilter<CtLocalVariableImpl<?>>(
 				CtLocalVariableImpl.class);
 		List<CtLocalVariableImpl<?>> localVars = instrumentedMethod.getElements(filterLocalVar);
@@ -225,6 +228,8 @@ public class Instrumentator
 			}
 		}
 
+		// XXXXXXX: Modifico asignaciones. si posee "a = b++ + x"
+		// lo reemplazo por dos sentencias: "a = b + x" y "b = b + 1"
 		TypeFilter<CtAssignment<?, ?>> filterAssignment = new TypeFilter<CtAssignment<?, ?>>(CtAssignment.class);
 		List<CtAssignment<?, ?>> assignments = instrumentedMethod.getElements(filterAssignment);
 
@@ -238,6 +243,8 @@ public class Instrumentator
 			}
 		}
 
+		// XXXXXXX: Reemplaza operadores de asignacion: a+=, a-=, a*=, a/= por
+		// "a = a + (...)", "a = a *(...)",...
 		OperatorAssignmentUtils operatorAssigUtils = new OperatorAssignmentUtils();
 		TypeFilter<CtOperatorAssignmentImpl<?, ?>> filterOperatorAssignment = operatorAssigUtils
 				.getFilterUnaryOperator();
@@ -256,7 +263,7 @@ public class Instrumentator
 		return change;
 	}
 
-	// TODO: add CtForImpl, CtForEachImpl, CtDoImpl,
+	// TODO: add CtForEachImpl
 	/**
 	 * cambiar While por "k" ifs anidados
 	 * 

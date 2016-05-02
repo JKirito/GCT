@@ -133,11 +133,6 @@ public class UTGenerator
 			try
 			{
 				Class<?>[] parameterTypes = SpoonUtils.getParametersTypes(actualMethod);
-				// for (int i = 0; i < actualMethod.getParameters().size(); i++)
-				// {
-				// parameterTypes[i] =
-				// actualMethod.getParameters().get(i).getType().getActualClass();
-				// }
 				inputsGenerated = instrumentedMethod.generateInputs(actualMethod.getSimpleName(), parameterTypes);
 			} catch (Exception e)
 			{

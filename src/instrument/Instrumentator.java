@@ -70,7 +70,7 @@ public class Instrumentator
 			return;
 		}
 
-		// Agrego atributo List<symbCondition> a la clase
+		// Agrego atributo LinkedHashSet<symbCondition> a la clase
 		CtType<Set<SymbCondition>> typeSet = _factory.Class()
 				.create("java.util.LinkedHashSet<" + SYMBCONDITIONAL_CLASS_NAME + ">");
 		CtTypeReference<Set<SymbCondition>> type = _factory.Type().createReference(typeSet);
@@ -532,7 +532,8 @@ public class Instrumentator
 
 	/**
 	 * Instrumenta el método agregando las condiciones que aparecen en los
-	 * ifStatement del método en una lista
+	 * ifStatement del método en una lista. Estas son las restricciones
+	 * simbólicas.
 	 * 
 	 * @param instrumentedMethod
 	 * 

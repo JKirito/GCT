@@ -24,6 +24,7 @@
                   <ProgressBar fx:id="_progressBar" layoutX="412.0" layoutY="217.0" prefHeight="20.0" prefWidth="228.0" progress="0.0" />
                </children>
             </Pane>
+            <Button fx:id="_btnAtajoEjemplo" layoutX="475.0" layoutY="33.0" mnemonicParsing="false" onAction="#loadEjemploClass" prefHeight="25.0" prefWidth="171.0" text="Atajo a Ejemplo :)" />
          </children>
       </Pane>
    </children>

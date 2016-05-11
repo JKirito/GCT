@@ -34,6 +34,8 @@ public class SelectedClassController
 	@FXML
 	private Button						_btnBuscar;
 	@FXML
+	private Button						_btnAtajoEjemplo;
+	@FXML
 	private TextField					_txtCiclo;
 	@FXML
 	private Button						_btnGenerarTest;
@@ -122,6 +124,27 @@ public class SelectedClassController
 			return;
 		}
 		this.clearListAndCompleteMethods(spoonedClass.getAllMethods());
+	}
+
+	// TODO: temporal! sólo para pruebas!
+	// Carga la clase test/Ejemplo.java
+	public void loadEjemploClass()
+	{
+		File f = new File("src" + File.separator + "test" + File.separator + "Ejemplo.java");
+		this._filePathJava = f.getAbsolutePath();
+		spoonedClass = new SpoonedClass(_filePathJava);
+		try
+		{
+			spoonedClass.loadClass();
+		} catch (Exception e)
+		{
+			ViewUtils.alertException("Se ha producido un error al cargar la clase " + this._filePathJava, e);
+			this._paneLoadClass.setDisable(true);
+			return;
+		}
+		this.clearListAndCompleteMethods(spoonedClass.getAllMethods());
+		this._txtCiclo.setText("3");
+		this._paneLoadClass.setDisable(false);
 	}
 
 	public void generarCasosDeTest()

@@ -19,7 +19,7 @@ public class MainApp extends Application
 	public void start(Stage primaryStage)
 	{
 		this.primaryStage = primaryStage;
-		this.primaryStage.setTitle("Generador de casos de Tests Unitarios");
+		this.primaryStage.setTitle("JGenTest: Generador de Test Automático");
 
 		initRootLayout();
 	}

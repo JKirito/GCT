@@ -3,19 +3,21 @@ package test;
 public class Ejemplo
 {
 
-	public Integer m0(int x, int y)
+	public Integer toTest(int x, int y)
 	{
-		while (x > 2 && y > 0)
-		{
-			x--;
-			int i = x + 1;
-			i %= 3;
-			while (i < 5)
-			{
-				i++;
-			}
-		}
-		return x;
+		x = x + 3;
+		if (x >= y)
+			if (x > 10)
+				return x;
+		return y;
+	}
+
+	public Integer toTest2(int x)
+	{
+		int y = 0;
+		while (y < x)
+			y++;
+		return y;
 	}
 
 	public void m1(int x, int y)
@@ -38,7 +40,35 @@ public class Ejemplo
 				x = x + 2;
 			}
 		}
+	}
 
+	public Integer m(int x, int y)
+	{
+		x = x * 3;
+		if (x == y)
+		{
+			x = x + y;
+			if (x >= 100 && y > 0)
+				return x;
+		}
+		if (x % 2 == 0)
+			return x;
+		return y;
+	}
+
+	public Integer m0(int x, int y)
+	{
+		while (x > 2 && y > 0)
+		{
+			x--;
+			int i = x + 1;
+			i %= 4;
+			while (i < 5)
+			{
+				i++;
+			}
+		}
+		return x;
 	}
 
 	public void m2(int x)

@@ -1,122 +1,98 @@
 package test;
-import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
 
 public class EjemploTest
- {
+{
 
 	@Test
-	public void m0_1()
+	public void toTest2_1()
 	{
 		Ejemplo var = new Ejemplo();
-		Integer ret = var.m0(0, 0);
+		Integer ret = var.toTest2(0);
 		assertEquals(new Integer(0), ret);
 	}
 
 	@Test
-	public void m0_2()
+	public void toTest2_2()
 	{
 		Ejemplo var = new Ejemplo();
-		Integer ret = var.m0(3, 1);
+		Integer ret = var.toTest2(1);
+		assertEquals(new Integer(1), ret);
+	}
+
+	@Test
+	public void toTest2_3()
+	{
+		Ejemplo var = new Ejemplo();
+		Integer ret = var.toTest2(2);
 		assertEquals(new Integer(2), ret);
 	}
 
 	@Test
-	public void m0_3()
+	public void toTest2_4()
 	{
 		Ejemplo var = new Ejemplo();
-		Integer ret = var.m0(6, 1);
-		assertEquals(new Integer(2), ret);
+		Integer ret = var.toTest2(3);
+		assertEquals(new Integer(3), ret);
 	}
 
 	@Test
-	public void m0_4()
+	public void toTest2_5()
 	{
 		Ejemplo var = new Ejemplo();
-		Integer ret = var.m0(4, 1);
-		assertEquals(new Integer(2), ret);
+		Integer ret = var.toTest2(4);
+		assertEquals(new Integer(4), ret);
 	}
 
 	@Test
-	public void m2_1()
+	public void toTest2_6()
 	{
 		Ejemplo var = new Ejemplo();
-		var.m2(0);
+		Integer ret = var.toTest2(5);
+		assertEquals(new Integer(5), ret);
 	}
 
 	@Test
-	public void m2_2()
+	public void toTest2_7()
 	{
 		Ejemplo var = new Ejemplo();
-		var.m2(1);
+		Integer ret = var.toTest2(6);
+		assertEquals(new Integer(6), ret);
 	}
 
 	@Test
-	public void m2_3()
+	public void toTest2_8()
 	{
 		Ejemplo var = new Ejemplo();
-		var.m2(2);
+		Integer ret = var.toTest2(7);
+		assertEquals(new Integer(7), ret);
 	}
 
 	@Test
-	public void m2_4()
+	public void toTest_1()
 	{
 		Ejemplo var = new Ejemplo();
-		var.m2(3);
-	}
-
-	@Test
-	public void m2_5()
-	{
-		Ejemplo var = new Ejemplo();
-		var.m2(5);
-	}
-
-	@Test
-	public void getMax_1()
-	{
-		Ejemplo var = new Ejemplo();
-		Integer ret = var.getMax(0, 0, 0);
+		Integer ret = var.toTest(0, 0);
 		assertEquals(new Integer(0), ret);
 	}
 
 	@Test
-	public void getMax_2()
+	public void toTest_2()
 	{
 		Ejemplo var = new Ejemplo();
-		Integer ret = var.getMax(-2, -1, 0);
-		assertEquals(new Integer(0), ret);
+		Integer ret = var.toTest(8, 11);
+		assertEquals(new Integer(11), ret);
 	}
 
 	@Test
-	public void getMax_3()
+	public void toTest_3()
 	{
 		Ejemplo var = new Ejemplo();
-		Integer ret = var.getMax(-1, 0, -2);
-		assertEquals(new Integer(0), ret);
-	}
-
-	@Test
-	public void getMax_4()
-	{
-		Ejemplo var = new Ejemplo();
-		Integer ret = var.getMax(0, -1, -1);
-		assertEquals(new Integer(0), ret);
-	}
-
-	@Test
-	public void m1_1()
-	{
-		Ejemplo var = new Ejemplo();
-		var.m1(0, 0);
-	}
-
-	@Test
-	public void m1_2()
-	{
-		Ejemplo var = new Ejemplo();
-		var.m1(3, 0);
+		Integer ret = var.toTest(-1, 3);
+		assertEquals(new Integer(3), ret);
 	}
 
 }
